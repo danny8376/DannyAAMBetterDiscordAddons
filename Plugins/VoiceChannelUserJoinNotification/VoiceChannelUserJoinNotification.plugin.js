@@ -29,7 +29,7 @@
 @else@*/
 
 module.exports = (() => {
-    const config = {info:{name:"VoiceChannelUserJoinNotification",authors:[{name:"DannyAAM",discord_id:"275978619354873856",github_username:"danny8376",twitter_username:"DannyAAMtw"}],version:"0.1.0",description:"A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds.",github:"https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",github_raw:"https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"},changelog:[{title:"Rewritten",items:["Rewritten with ZeresPluginLibrary as BDv2 Style Plugin."]}],main:"index.js",defaultConfig:[{type:"category",id:"monitoring",name:"i18n:settingsMonitoringTitle",collapsible:false,shown:true,settings:[{type:"textbox",id:"guilds",name:"i18n:settingsGuildsTitle",note:"i18n:settingsGuildsNote",value:"000000000000000000#Example"},{type:"textbox",id:"users",name:"i18n:settingsUsersTitle",note:"i18n:settingsUsersNote",value:"000000000000000000#Example,000000000000000000"}]},{type:"category",id:"options",name:"i18n:settingsOptionsTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"allGuilds",name:"i18n:settingsAllGuilds",note:"",value:false},{type:"switch",id:"notifyLeave",name:"i18n:settingsNotifyLeave",note:"",value:false},{type:"switch",id:"silentNotification",name:"i18n:settingsSilentNofification",note:"",value:false},{type:"switch",id:"suppressInDnd",name:"i18n:settingsSuppressInDnd",note:"",value:true},{type:"switch",id:"logHotkey",name:"i18n:settingsLogHotkey",note:"",value:true}]}]};
+    const config = {info:{name:"VoiceChannelUserJoinNotification",authors:[{name:"DannyAAM",discord_id:"275978619354873856",github_username:"danny8376",twitter_username:"DannyAAMtw"}],version:"0.1.0",description:"A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",github:"https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",github_raw:"https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"},changelog:[{title:"Rewritten",version:"0.1.0",items:["Rewritten with ZeresPluginLibrary as BDv2 Style Plugin."]},{title:"Thanks",items:["This plugins is originaly modified from VoiceChatNotifications by Metalloriff (https://github.com/Metalloriff/BetterDiscordPlugins/blob/a056291d1498deb721908cce45cff5625c7a7f1e/VoiceChatNotifications.plugin.js). Learned from his plugins how to implement this plugin. Thanks for him."]}],main:"index.js",defaultConfig:[{type:"category",id:"monitoring",name:"i18n:settingsMonitoringTitle",collapsible:false,shown:true,settings:[{type:"textbox",id:"guilds",name:"i18n:settingsGuildsTitle",note:"i18n:settingsGuildsNote",value:"000000000000000000#Example"},{type:"textbox",id:"users",name:"i18n:settingsUsersTitle",note:"i18n:settingsUsersNote",value:"000000000000000000#Example,000000000000000000"}]},{type:"category",id:"options",name:"i18n:settingsOptionsTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"allGuilds",name:"i18n:settingsAllGuilds",note:"",value:false},{type:"switch",id:"notifyLeave",name:"i18n:settingsNotifyLeave",note:"",value:false},{type:"switch",id:"silentNotification",name:"i18n:settingsSilentNofification",note:"",value:false},{type:"switch",id:"suppressInDnd",name:"i18n:settingsSuppressInDnd",note:"",value:true},{type:"switch",id:"logHotkey",name:"i18n:settingsLogHotkey",note:"",value:true}]}]};
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
@@ -53,7 +53,7 @@ module.exports = (() => {
         stop() {}
     } : (([Plugin, Api]) => {
         const plugin = (Plugin, Api) => {
-    const {PluginUtilities, DiscordModules, DiscordSelectors, ReactTools, DOMTools, Modals, Utilities, DiscordClasses, WebpackModules} = Api;
+    const {DiscordModules, DOMTools, Modals, Utilities, DiscordClasses, WebpackModules} = Api;
 
     return class VoiceChannelUserJoinNotification extends Plugin {
         constructor() {
@@ -178,37 +178,7 @@ module.exports = (() => {
             this.onKeyDown = e => {
 
                 if(this.settings.options.logHotkey && e.altKey && e.key == "v") {
-
                     this.showVoiceLogModal();
-
-                    /*
-                    if(document.getElementById("vcn-log")) return;
-
-                    const list = NeatoLib.UI.createBasicScrollList("vcn-log", "Voice Notification Log", { width : 400, height : 500 });
-
-                    if(this.log.length > 50) this.log.splice(50, this.log.length);
-
-                    for(let i = 0; i < this.log.length; i++) {
-                        list.scroller.insertAdjacentHTML("afterbegin", `
-                    
-                        <div class="message-group hide-overflow">
-                            <div class="avatar-large stop-animation" style="background-image: url(${this.log[i].avatar});"></div>
-                            <div class="comment">
-                                <div class=NeatoLib.Modules.get("message").message.split(" ").join("")>
-                                    <div class="body">
-                                        <h2 class="old-h2"><span class="username-wrapper"><strong class="user-name" style="color: white">${this.log[i].username}</strong></span><span class="highlight-separator"> - </span><span class="timestamp">${this.log[i].timestamp}</span></h2>
-                                        <div class="message-text">
-                                            <div class=NeatoLib.Modules.get("markup").markup.split(" ").join("")>${this.log[i].text}.</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    
-                        `);
-                    }
-                   */
-
                 }
 
             };
@@ -261,7 +231,6 @@ module.exports = (() => {
         }
 
         notificationAndLog({act, user, channel, guild}) {
-            //this.log.push({avatar: user.getAvatarURL(), username: user.username , timestamp : new Date().toLocaleTimeString(), text : this.getLocaleText(`notification${act}Log`, {channel: channel.name, guild: guild.name})});
             this.log.push({user_id: user.id, channel_id: channel.id, guild_id: guild.id, timestamp: new Date().toLocaleTimeString(), act});
             if(!(this.settings.options.suppressInDnd && this.getLocalStatus() == "dnd") && !this.afkChannels.includes(channel.id) && (act !== "Leave" || this.settings.options.notifyLeave)) {
                 const notification = new Notification(this.getLocaleText(`notification${act}Message`, {user: user.username, channel: channel.name, guild: guild.name}), {silent: this.settings.options.silentNotification, icon: user.getAvatarURL()});
@@ -277,6 +246,10 @@ module.exports = (() => {
             switch (this.getLocaleInfo().code) {
                 case "zh-TW":
                     switch (id) {
+                        case "settingsMonitoringTitle":
+                            return "監測清單";
+                        case "settingsOptionsTitle":
+                            return "其他選項";
                         case "settingsGuildsTitle":
                             return "檢查伺服器ID ( , 分隔，ID後可加#註解)";
                         case "settingsGuildsNote":
@@ -298,26 +271,24 @@ module.exports = (() => {
                         
                         case "notificationJoinMessage":
                             return `${args.user} 進入了 ${args.channel} @ ${args.guild}`;
-                        case "notificationJoinLog":
-                            return `進入了 ${args.channel} @ ${args.guild}`;
                         case "notificationJoin":
                             return "進入了";
                         case "notificationMoveMessage":
                             return `${args.user} 移動到 ${args.channel} @ ${args.guild}`;
-                        case "notificationMoveLog":
-                            return `移動到 ${args.channel} @ ${args.guild}`;
                         case "notificationMove":
                             return "移動到";
                         case "notificationLeaveMessage":
                             return `${args.user} 離開 ${args.channel} @ ${args.guild}`;
-                        case "notificationLeaveLog":
-                            return `離開 ${args.channel} @ ${args.guild}`;
                         case "notificationLeave":
                             return "離開";
                     }
                 case "en-US":
                 default:
                     switch (id) {
+                        case "settingsMonitoringTitle":
+                            return "Monitoring List";
+                        case "settingsOptionsTitle":
+                            return "Other Options";
                         case "settingsGuildsTitle":
                             return "Monitoring Guild IDs (seprated with \",\" and append \"#\" after id for commenting)";
                         case "settingsGuildsNote":
@@ -339,16 +310,16 @@ module.exports = (() => {
                         
                         case "notificationJoinMessage":
                             return `${args.user} joined ${args.channel} @ ${args.guild}`;
-                        case "notificationJoinLog":
-                            return `Joined ${args.channel} @ ${args.guild}`;
+                        case "notificationJoin":
+                            return "Joined";
                         case "notificationMoveMessage":
                             return `${args.user} moved to ${args.channel} @ ${args.guild}`;
-                        case "notificationMoveLog":
-                            return `Moved to ${args.channel} @ ${args.guild}`;
+                        case "notificationMove":
+                            return "Moved to";
                         case "notificationLeaveMessage":
                             return `${args.user} left ${args.channel} @ ${args.guild}`;
-                        case "notificationLeaveLog":
-                            return `Left ${args.channel} @ ${args.guild}`;
+                        case "notificationLeave":
+                            return "Left";
                     }
             }
         }
