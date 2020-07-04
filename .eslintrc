@@ -1,0 +1,43 @@
+{
+	"extends": "eslint:recommended",
+	"env": {
+        "browser": true,
+        "node": true,
+		"jquery": true
+    },
+    "parserOptions": {
+        "ecmaVersion": 8
+    },
+    "rules": {
+        "no-undef": "error",
+        "semi": "error",
+        "space-infix-ops": "error",
+        "quotes": ["error", "double", {"allowTemplateLiterals": true}],
+        "no-console": "error",
+        "no-shadow": ["warn", { "builtinGlobals": false, "hoist": "functions", "allow": [] }],
+        "no-redeclare": ["error", { "builtinGlobals": true }],
+        "brace-style": ["error", "stroustrup", {"allowSingleLine": true}],
+        "keyword-spacing": "error",
+        "no-else-return": "error",
+        "curly": ["error", "multi-line", "consistent"],
+        "dot-notation": "error",
+        "yoda": "error",
+        "linebreak-style": ["error", "windows"],
+        "quote-props": ["error", "consistent-as-needed", {"keywords": true}],
+        "object-curly-spacing": ["error", "never", { "objectsInObjects": false }],
+        "no-var": "error",
+        "prefer-const": "error"
+    },
+    "globals": {
+        "webpackJsonp": false,
+        "Proxy": false,
+        "Set": false,
+        "WeakMap": false,
+        "Promise": false,
+        "BdApi": false,
+        "V2C_ContentColumn": false,
+        "bdPluginStorage": false,
+        "Map": false,
+        "Reflect": false
+    }
+}

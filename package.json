@@ -1,0 +1,31 @@
+{
+  "name": "dannyaambetterdiscordaddons",
+  "version": "1.0.0",
+  "description": "Addons for BetterDiscord by DannyAAM.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danny8376/DannyAAMBetterDiscordAddons"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "build_plugin": "node ./scripts/build.js local",
+    "build_plugin_remote": "node ./scripts/build.js remote"
+  },
+  "author": "DannyAAM",
+  "license": "MIT",
+  "eslintIgnore": [
+    "scripts/template*"
+  ],
+  "buildConfig": {
+    "pluginsFolder": "./src/Plugins",
+    "releaseFolder": "./Plugins/{{PLUGIN_NAME}}",
+    "copyToBD": false,
+    "addInstallScript": true,
+    "github": "https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/{{PLUGIN_NAME}}",
+    "githubRaw": "https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/{{PLUGIN_NAME}}/{{PLUGIN_NAME}}.plugin.js",
+    "patreonLink": "https://patreon.com/NOTHINGHERE",
+    "paypalLink": "https://paypal.me/NOTHINGHERE",
+    "inviteCode": "NOTHINGHERE",
+    "authorLink": "https://saru.moe"
+  }
+}
