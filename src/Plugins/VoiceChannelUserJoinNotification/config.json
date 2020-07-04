@@ -22,26 +22,38 @@
         {
             "type": "category",
             "id": "monitoring",
-            "name": "i18n:settingsMonitoringTitle",
+            "name": "i18n:MonitoringTitle",
             "collapsible": false,
             "shown": true,
             "settings": [
-                {"type": "textbox", "id": "guilds", "name": "i18n:settingsGuildsTitle", "note": "i18n:settingsGuildsNote", "value": "000000000000000000#Example"},
-                {"type": "textbox", "id": "users", "name": "i18n:settingsUsersTitle", "note": "i18n:settingsUsersNote", "value": "000000000000000000#Example,000000000000000000"}
+                {"type": "textbox", "id": "guilds", "name": "i18n:GuildsTitle", "note": "i18n:GuildsNote", "value": "000000000000000000#Example"},
+                {"type": "textbox", "id": "users", "name": "i18n:UsersTitle", "note": "i18n:UsersNote", "value": "000000000000000000#Example,000000000000000000"}
+            ]
+        },
+        {
+            "type": "category",
+            "id": "log",
+            "name": "i18n:LogTitle",
+            "collapsible": false,
+            "shown": true,
+            "settings": [
+                {"type": "switch", "id": "logAllUsers", "name": "i18n:LogAllUsers", "note": "", "value": false},
+                {"type": "switch", "id": "persistLog", "name": "i18n:PersistLog", "note": "", "value": false},
+                {"type": "textbox", "id": "maxLogEntries", "name": "i18n:MaxLogEntries", "note": "", "value": "250"}
             ]
         },
         {
             "type": "category",
             "id": "options",
-            "name": "i18n:settingsOptionsTitle",
+            "name": "i18n:OptionsTitle",
             "collapsible": false,
             "shown": true,
             "settings": [
-                {"type": "switch", "id": "allGuilds", "name": "i18n:settingsAllGuilds", "note": "", "value": false},
-                {"type": "switch", "id": "notifyLeave", "name": "i18n:settingsNotifyLeave", "note": "", "value": false},
-                {"type": "switch", "id": "silentNotification", "name": "i18n:settingsSilentNotification", "note": "", "value": false},
-                {"type": "switch", "id": "suppressInDnd", "name": "i18n:settingsSuppressInDnd", "note": "", "value": true},
-                {"type": "switch", "id": "logHotkey", "name": "i18n:settingsLogHotkey", "note": "", "value": true}
+                {"type": "switch", "id": "allGuilds", "name": "i18n:AllGuilds", "note": "", "value": false},
+                {"type": "switch", "id": "notifyLeave", "name": "i18n:NotifyLeave", "note": "", "value": false},
+                {"type": "switch", "id": "silentNotification", "name": "i18n:SilentNotification", "note": "", "value": false},
+                {"type": "switch", "id": "suppressInDnd", "name": "i18n:SuppressInDnd", "note": "", "value": true},
+                {"type": "switch", "id": "logHotkey", "name": "i18n:LogHotkey", "note": "", "value": true}
             ]
         }
     ]

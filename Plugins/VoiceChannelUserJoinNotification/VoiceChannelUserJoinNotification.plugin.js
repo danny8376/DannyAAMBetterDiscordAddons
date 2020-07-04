@@ -29,7 +29,7 @@
 @else@*/
 
 module.exports = (() => {
-    const config = {info:{name:"VoiceChannelUserJoinNotification",authors:[{name:"DannyAAM",discord_id:"275978619354873856",github_username:"danny8376",twitter_username:"DannyAAMtw"}],version:"0.1.1",description:"A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",github:"https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",github_raw:"https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"},changelog:[{title:"More Robust Locale",version:"0.1.1",items:["More robust locale fix!"]},{title:"Rewritten",version:"0.1.0",items:["Rewritten with ZeresPluginLibrary as BDv2 Style Plugin."]},{title:"Thanks",items:["This plugins is originaly modified from VoiceChatNotifications by Metalloriff (https://github.com/Metalloriff/BetterDiscordPlugins/blob/a056291d1498deb721908cce45cff5625c7a7f1e/VoiceChatNotifications.plugin.js). Learned from his plugins how to implement this plugin. Thanks for him."]}],main:"index.js",defaultConfig:[{type:"category",id:"monitoring",name:"i18n:settingsMonitoringTitle",collapsible:false,shown:true,settings:[{type:"textbox",id:"guilds",name:"i18n:settingsGuildsTitle",note:"i18n:settingsGuildsNote",value:"000000000000000000#Example"},{type:"textbox",id:"users",name:"i18n:settingsUsersTitle",note:"i18n:settingsUsersNote",value:"000000000000000000#Example,000000000000000000"}]},{type:"category",id:"options",name:"i18n:settingsOptionsTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"allGuilds",name:"i18n:settingsAllGuilds",note:"",value:false},{type:"switch",id:"notifyLeave",name:"i18n:settingsNotifyLeave",note:"",value:false},{type:"switch",id:"silentNotification",name:"i18n:settingsSilentNotification",note:"",value:false},{type:"switch",id:"suppressInDnd",name:"i18n:settingsSuppressInDnd",note:"",value:true},{type:"switch",id:"logHotkey",name:"i18n:settingsLogHotkey",note:"",value:true}]}]};
+    const config = {info:{name:"VoiceChannelUserJoinNotification",authors:[{name:"DannyAAM",discord_id:"275978619354873856",github_username:"danny8376",twitter_username:"DannyAAMtw"}],version:"0.1.1",description:"A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",github:"https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",github_raw:"https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"},changelog:[{title:"More Robust Locale",version:"0.1.1",items:["More robust locale fix!"]},{title:"Rewritten",version:"0.1.0",items:["Rewritten with ZeresPluginLibrary as BDv2 Style Plugin."]},{title:"Thanks",items:["This plugins is originaly modified from VoiceChatNotifications by Metalloriff (https://github.com/Metalloriff/BetterDiscordPlugins/blob/a056291d1498deb721908cce45cff5625c7a7f1e/VoiceChatNotifications.plugin.js). Learned from his plugins how to implement this plugin. Thanks for him."]}],main:"index.js",defaultConfig:[{type:"category",id:"monitoring",name:"i18n:MonitoringTitle",collapsible:false,shown:true,settings:[{type:"textbox",id:"guilds",name:"i18n:GuildsTitle",note:"i18n:GuildsNote",value:"000000000000000000#Example"},{type:"textbox",id:"users",name:"i18n:UsersTitle",note:"i18n:UsersNote",value:"000000000000000000#Example,000000000000000000"}]},{type:"category",id:"log",name:"i18n:LogTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"logAllUsers",name:"i18n:LogAllUsers",note:"",value:false},{type:"switch",id:"persistLog",name:"i18n:PersistLog",note:"",value:false},{type:"textbox",id:"maxLogEntries",name:"i18n:MaxLogEntries",note:"",value:"250"}]},{type:"category",id:"options",name:"i18n:OptionsTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"allGuilds",name:"i18n:AllGuilds",note:"",value:false},{type:"switch",id:"notifyLeave",name:"i18n:NotifyLeave",note:"",value:false},{type:"switch",id:"silentNotification",name:"i18n:SilentNotification",note:"",value:false},{type:"switch",id:"suppressInDnd",name:"i18n:SuppressInDnd",note:"",value:true},{type:"switch",id:"logHotkey",name:"i18n:LogHotkey",note:"",value:true}]}]};
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
@@ -53,7 +53,7 @@ module.exports = (() => {
         stop() {}
     } : (([Plugin, Api]) => {
         const plugin = (Plugin, Api) => {
-    const {DiscordModules, DOMTools, Modals, Utilities, DiscordClasses, WebpackModules} = Api;
+    const {Patcher, DiscordContextMenu, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
 
     return class VoiceChannelUserJoinNotification extends Plugin {
         constructor() {
@@ -62,6 +62,7 @@ module.exports = (() => {
             this.monitoringGuilds = [];
             this.monitoringUsers = [];
             this.afkChannels = [];
+            this.maxLogEntries = 0;
 
             this.currentLocale = "";
 
@@ -76,7 +77,7 @@ module.exports = (() => {
     </div>
     <div class="flex-1xMQg5 flex-1O1GKY da-flex da-flex vertical-V37hAW flex-1O1GKY directionColumn-35P_nr justifyStart-2NDFzi alignStretch-DpGPf3 noWrap-3jynv6 timeWrap-2DasL6 da-timeWrap" style="flex: 1 1 auto;">
       <div class="overflowEllipsis-1PBFxQ da-overflowEllipsis flexChild-faoVW3 da-flexChild" style="flex: 1 1 auto; word-wrap: break-word; white-space: normal;">
-        <span class="userHook-3AdCBF da-userHook"><span>{{user_name}}</span><span class="discrim-3rYTMj da-discrim">#{{user_discrim}}</span></span> {{action}} <span class="targetChannel-TrRFlx da-targetChannel"><strong>#{{channel_name}}</strong></span> @ <img class="icon-27yU2q da-icon" src="{{guild_icon}}" alt="" style="display:inline;width:2em;height:2em;" aria-hidden="true"><span class="targetChannel-TrRFlx da-targetChannel"><strong>#{{guild_name}}</strong></span>
+        <span class="userHook-3AdCBF da-userHook"><span>{{user_name}}</span><span class="discrim-3rYTMj da-discrim">#{{user_discrim}}</span></span> {{action}} <span class="targetChannel-TrRFlx da-targetChannel"><strong>#{{channel_name}}</strong></span> @ <img class="icon-27yU2q da-icon" src="{{guild_icon}}" alt="" style="display: inline; border-radius: 50%; width: 2em; height: 2em;" aria-hidden="true"><span class="targetChannel-TrRFlx da-targetChannel"><strong>{{guild_name}}</strong></span>
       </div>
       <div class="timestamp-1mruiI da-timestamp">{{timestamp}}</div>
     </div>
@@ -117,7 +118,7 @@ module.exports = (() => {
             ["name", "note"].forEach(key => {
                 if (defConfigObj.hasOwnProperty(key)) {
                     const localeText = this.getLocaleText(`${parentName}.${defConfigObj.id}.${key}`);
-                    if (typeof localeText !== "undefined") {
+                    if (localeText !== undefined) {
                         defConfigObj[key] = localeText;
                     }
                 }
@@ -130,14 +131,24 @@ module.exports = (() => {
             this.checkPatchI18n();
 
             this.log = [];
-
-            let lastStates = [];
+            this.lastStates = {};
 
             const localUser = this.getCurrentUser();
 
-            this.parseMatchlist();
+            this.parseSettings();
+            if(this.settings.log.persistLog) {
+                this.loadPersistLog();
+            }
+
+            this.contextMenuPatches = [];
+            this.patchContextMenus();
+
+            const logSaveCount = 120; // * 500ms => 60s
+            let logSaveCounter = 0;
+            let logChanged = false;
 
             this.update = setInterval(() => {
+                if (this.settings.log.persistLog && logSaveCounter < logSaveCount) logSaveCounter++;
 
                 if (!this.settings.options.allGuilds && this.monitoringGuilds.length == 0) return;
                 if (this.monitoringUsers.length == 0) return;
@@ -155,25 +166,32 @@ module.exports = (() => {
                 const newStates = targetGuilds.map(gid => this.getVoiceStates(gid)).reduce((a, v) => {return {...v, ...a}});
 
                 for(let id in newStates) {
+                    let noNotify = false;
 
-                    if(localUser.id == id) continue;
-                    if(!this.monitoringUsers.includes(id)) continue;
+                    if(localUser.id === id) continue;
+                    if (!this.monitoringUsers.includes(id)) {
+                        if (this.settings.log.logAllUsers) noNotify = true;
+                        else continue;
+                    }
 
-                    if(lastStates[id] == undefined) {
+                    if(this.lastStates[id] === undefined) {
                         const user = this.getUser(id), channel = this.getChannel(newStates[id].channelId);
                         if(user && channel) {
                             const guild = this.getGuild(channel.guild_id);
-                            this.notificationAndLog({act: "Join", user, channel, guild});
+                            this.notificationAndLog({act: "Join", user, channel, guild}, noNotify);
+                            logChanged = true;
                         }
                     } else {
 
-                        if(lastStates[id].channelId != newStates[id].channelId) {
+                        if(this.lastStates[id].channelId !== newStates[id].channelId) {
 
                             const user = this.getUser(id), channel = this.getChannel(newStates[id].channelId);
+                            const lastChannel = this.getChannel(this.lastStates[id].channelId);
 
                             if(user && channel) {
                                 const guild = this.getGuild(channel.guild_id);
-                                this.notificationAndLog({act: "Move", user, channel, guild});
+                                this.notificationAndLog({act: "Move", user, channel, lastChannel, guild}, noNotify);
+                                logChanged = true;
                             }
 
                             continue;
@@ -184,21 +202,33 @@ module.exports = (() => {
 
                 }
 
-                for(let id in lastStates) {
-                    if(localUser.id == id) continue;
-                    if(!this.monitoringUsers.includes(id)) continue;
+                for(let id in this.lastStates) {
+                    let noNotify = false;
 
-                    if(newStates[id] == undefined && id != localUser.id) {
-                        const user = this.getUser(id), channel = this.getChannel(lastStates[id].channelId);
+                    if(localUser.id === id) continue;
+                    if (!this.monitoringUsers.includes(id)) {
+                        if (this.settings.log.logAllUsers) noNotify = true;
+                        else continue;
+                    }
+
+                    if(newStates[id] === undefined && id !== localUser.id) {
+                        const user = this.getUser(id), channel = this.getChannel(this.lastStates[id].channelId);
                         if(user && channel) {
                             const guild = this.getGuild(channel.guild_id);
-                            this.notificationAndLog({act: "Leave", user, channel, guild});
+                            this.notificationAndLog({act: "Leave", user, channel, guild}, noNotify);
+                            logChanged = true;
                         }
                     }
                 }
 
-                lastStates = newStates;
+                this.lastStates = newStates;
 
+                if (logChanged && logSaveCounter >= logSaveCount) {
+                    logChanged = false;
+                    logSaveCounter = 0;
+
+                    this.savePersistLog();
+                }
             }, 500);
 
             this.focused = true;
@@ -225,6 +255,7 @@ module.exports = (() => {
             window.removeEventListener("focus", this.focus);
             window.removeEventListener("blur", this.unfocus);
             document.removeEventListener("keydown", this.onKeyDown);
+            this.unpatchContextMenus();
             this.saveSettings();
         }
 
@@ -232,7 +263,7 @@ module.exports = (() => {
             return this.getStatus(this.getCurrentUser().id);
         }
 
-        parseMatchlist() {
+        parseSettings() {
             this.monitoringGuilds = [];
             this.monitoringUsers = [];
             this.settings.monitoring.guilds.split(",").forEach(l => {
@@ -241,33 +272,119 @@ module.exports = (() => {
             this.settings.monitoring.users.split(",").forEach(l => {
                 this.monitoringUsers.push(l.split("#")[0].trim());
             });
+
+            this.maxLogEntries = parseInt(this.settings.log.maxLogEntries, 10);
         }
 
-        showVoiceLogModal() {
+        loadPersistLog() {
+            const {lastStates, log} = PluginUtilities.loadData(this.getName() + 'Data', 'data', {
+                lastStates: {},
+                log: []
+            });
+            this.lastStates = lastStates;
+            this.log = log;
+        }
+
+        savePersistLog() {
+            PluginUtilities.saveData(this.getName() + 'Data', 'data', {
+                lastStates: this.lastStates,
+                log: this.log
+            });
+        }
+
+        unpatchContextMenus() {
+            this.contextMenuPatches.forEach(f => f());
+        }
+
+        patchContextMenus() {
+            this.patchGuildContextMenu();
+            this.patchVoiceChannelContextMenu();
+            this.patchUserContextMenu();
+        }
+
+        patchGuildContextMenu() {
+            const GuildContextMenu = WebpackModules.getModule(m => m.default && m.default.displayName == "GuildContextMenu");
+            this.contextMenuPatches.push(Patcher.after(GuildContextMenu, "default", (_, [props], retVal) => {
+                Utilities.getNestedProp(
+                    Utilities.findInReactTree(retVal, e => e && e.type && e.type.displayName === 'Menu'),
+                    'props.children'
+                ).push(DiscordContextMenu.buildMenuItem({
+                    label: this.getLocaleText("contextmenuVoiceLog"), action: () => {
+                        this.showVoiceLogModal({guildId: props.guild.id});
+                    }
+                }));
+            }));
+        }
+
+        patchVoiceChannelContextMenu() {
+            const VCCMs = WebpackModules.getModules(m => m.default && m.default.displayName == "ChannelListVoiceChannelContextMenu");
+            const patch = (_, [props], retVal) => {
+                Utilities.getNestedProp(
+                    Utilities.findInReactTree(retVal, e => e && e.type && e.type.displayName === 'Menu'),
+                    'props.children'
+                ).push(DiscordContextMenu.buildMenuItem({
+                    label: this.getLocaleText("contextmenuVoiceLog"), action: () => {
+                        this.showVoiceLogModal({channelId: props.channel.id});
+                    }
+                }));
+            };
+            VCCMs.forEach(VCCM => {
+                this.contextMenuPatches.push(Patcher.after(VCCM, "default", patch));
+            });
+        }
+
+        patchUserContextMenu() {
+            const UserContextMenu = WebpackModules.getModule(m => m.default && m.default.displayName == "GuildChannelUserContextMenu");
+            this.contextMenuPatches.push(Patcher.after(UserContextMenu, "default", (_, [props], retVal) => {
+                Utilities.getNestedProp(
+                    Utilities.findInReactTree(retVal, e => e && e.type && e.type.displayName === 'Menu'),
+                    'props.children'
+                ).push(DiscordContextMenu.buildMenuItem({
+                    label: this.getLocaleText("contextmenuVoiceLog"), action: () => {
+                        this.showVoiceLogModal({userId: props.user.id});
+                    }
+                }));
+            }));
+        }
+
+        showVoiceLogModal({userId, channelId, guildId}={}) {
             this.checkPatchI18n();
+            let log = this.log;
+            if (guildId !== undefined) log = log.filter(entry => entry.guildId === guildId);
+            if (channelId !== undefined) log = log.filter(entry => entry.channelId === channelId);
+            if (userId !== undefined) log = log.filter(entry => entry.userId === userId);
             const ce = DiscordModules.React.createElement;
             const AuditLog = DiscordClasses.AuditLog;
-            const children = this.log.map(log => {
-                const user = this.getUser(log.user_id);
-                const channel = this.getChannel(log.channel_id);
-                const guild = this.getGuild(log.guild_id);
+            const children = log.map(entry => {
+                const user = this.getUser(entry.userId);
+                const channel = this.getChannel(entry.channelId);
+                const guild = this.getGuild(entry.guildId);
+                if (user === undefined || channel === undefined || guild === undefined) return null;
                 return ce("div", { dangerouslySetInnerHTML:{ __html: Utilities.formatString(this.itemHTML, {
                     user_name: DOMTools.escapeHTML(user.username),
                     user_discrim: user.discriminator,
                     avatar_url: user.getAvatarURL(),
-                    action: DOMTools.escapeHTML(this.getLocaleText(`notification${log.act}`)),
+                    action: DOMTools.escapeHTML(this.getLocaleText(`notification${entry.act}`)),
                     channel_name: DOMTools.escapeHTML(channel.name),
                     guild_icon: guild.getIconURL(),
                     guild_name: DOMTools.escapeHTML(guild.name),
-                    timestamp: DOMTools.escapeHTML(new Date(log.timestamp).toLocaleString())
+                    timestamp: DOMTools.escapeHTML(new Date(entry.timestamp).toLocaleString())
                 }) } });
             });
             Modals.showModal(this.getLocaleText("modalLogTitle"), children, {cancelText: null});
         }
 
-        notificationAndLog({act, user, channel, guild}) {
-            this.log.push({user_id: user.id, channel_id: channel.id, guild_id: guild.id, timestamp: new Date().getTime(), act});
-            if(!(this.settings.options.suppressInDnd && this.getLocalStatus() == "dnd") && !this.afkChannels.includes(channel.id) && (act !== "Leave" || this.settings.options.notifyLeave)) {
+        pushLog(logEntry){
+            this.log.unshift(logEntry);
+            if (this.log.length > this.maxLogEntries) {
+                this.log.pop();
+            }
+        }
+
+        notificationAndLog({act, user, channel, lastChannel, guild}, noNotify) {
+            const lastChannelId = lastChannel === undefined ? null : lastChannel.id;
+            this.pushLog({userId: user.id, channelId: channel.id, lastChannelId, guildId: guild.id, timestamp: new Date().getTime(), act});
+            if(!noNotify && !(this.settings.options.suppressInDnd && this.getLocalStatus() == "dnd") && !this.afkChannels.includes(channel.id) && (act !== "Leave" || this.settings.options.notifyLeave)) {
                 this.checkPatchI18n();
                 const notification = new Notification(this.getLocaleText(`notification${act}Message`, {user: user.username, channel: channel.name, guild: guild.name}), {silent: this.settings.options.silentNotification, icon: user.getAvatarURL()});
                 if (act === "Join" || act === "Move") {
@@ -294,6 +411,14 @@ module.exports = (() => {
                             return "檢查使用者 ( , 分隔，ID後可加#註解)";
                         case "config.monitoring.users.note":
                             return "使用<使用者ID>，多組時使用 , 來分隔，ID後可加#註解";
+                        case "config.log.name":
+                            return "記錄相關選項";
+                        case "config.log.logAllUsers.name":
+                            return "記錄所有使用者";
+                        case "config.log.persistLog.name":
+                            return "儲存紀錄";
+                        case "config.log.maxLogEntries.name":
+                            return "最大紀錄數量";
                         case "config.options.allGuilds.name":
                             return "檢查所有已加入伺服器";
                         case "config.options.notifyLeave.name":
@@ -320,6 +445,8 @@ module.exports = (() => {
 
                         case "modalLogTitle":
                             return "語音通知紀錄";
+                        case "contextmenuVoiceLog":
+                            return "語音記錄";
                     }
                 case "en-US":
                 default:
@@ -336,6 +463,14 @@ module.exports = (() => {
                             return "Monitoring User IDs (seprated with \",\" and append \"#\" after id for commenting)";
                         case "config.monitoring.users.note":
                             return "User IDs (seprated with \",\" and append \"#\" after id for commenting)";
+                        case "config.log.name":
+                            return "Log related";
+                        case "config.log.logAllUsers.name":
+                            return "Log all user actions";
+                        case "config.log.persistLog.name":
+                            return "Persist log";
+                        case "config.log.maxLogEntries.name":
+                            return "Max log entries counts";
                         case "config.options.allGuilds.name":
                             return "Monitor all guilds";
                         case "config.options.notifyLeave.name":
@@ -362,6 +497,8 @@ module.exports = (() => {
 
                         case "modalLogTitle":
                             return "Voice Notification Log";
+                        case "contextmenuVoiceLog":
+                            return "Voice Log";
                     }
             }
         }
@@ -369,7 +506,7 @@ module.exports = (() => {
         getSettingsPanel() {
             this.checkPatchI18n();
             const panel = this.buildSettingsPanel();
-            panel.addListener(this.parseMatchlist.bind(this));
+            panel.addListener(this.parseSettings.bind(this));
             return panel.getElement();
         }
 

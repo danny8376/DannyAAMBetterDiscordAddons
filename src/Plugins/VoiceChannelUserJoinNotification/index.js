@@ -1,6 +1,6 @@
 
 module.exports = (Plugin, Api) => {
-    const {DiscordModules, DOMTools, Modals, Utilities, DiscordClasses, WebpackModules} = Api;
+    const {Patcher, DiscordContextMenu, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
 
     return class VoiceChannelUserJoinNotification extends Plugin {
         constructor() {
@@ -9,6 +9,7 @@ module.exports = (Plugin, Api) => {
             this.monitoringGuilds = [];
             this.monitoringUsers = [];
             this.afkChannels = [];
+            this.maxLogEntries = 0;
 
             this.currentLocale = "";
 
@@ -46,7 +47,7 @@ module.exports = (Plugin, Api) => {
             ["name", "note"].forEach(key => {
                 if (defConfigObj.hasOwnProperty(key)) {
                     const localeText = this.getLocaleText(`${parentName}.${defConfigObj.id}.${key}`);
-                    if (typeof localeText !== "undefined") {
+                    if (localeText !== undefined) {
                         defConfigObj[key] = localeText;
                     }
                 }
@@ -59,14 +60,24 @@ module.exports = (Plugin, Api) => {
             this.checkPatchI18n();
 
             this.log = [];
-
-            let lastStates = [];
+            this.lastStates = {};
 
             const localUser = this.getCurrentUser();
 
-            this.parseMatchlist();
+            this.parseSettings();
+            if(this.settings.log.persistLog) {
+                this.loadPersistLog();
+            }
+
+            this.contextMenuPatches = [];
+            this.patchContextMenus();
+
+            const logSaveCount = 120; // * 500ms => 60s
+            let logSaveCounter = 0;
+            let logChanged = false;
 
             this.update = setInterval(() => {
+                if (this.settings.log.persistLog && logSaveCounter < logSaveCount) logSaveCounter++;
 
                 if (!this.settings.options.allGuilds && this.monitoringGuilds.length == 0) return;
                 if (this.monitoringUsers.length == 0) return;
@@ -84,25 +95,32 @@ module.exports = (Plugin, Api) => {
                 const newStates = targetGuilds.map(gid => this.getVoiceStates(gid)).reduce((a, v) => {return {...v, ...a}});
 
                 for(let id in newStates) {
+                    let noNotify = false;
 
-                    if(localUser.id == id) continue;
-                    if(!this.monitoringUsers.includes(id)) continue;
+                    if(localUser.id === id) continue;
+                    if (!this.monitoringUsers.includes(id)) {
+                        if (this.settings.log.logAllUsers) noNotify = true;
+                        else continue;
+                    }
 
-                    if(lastStates[id] == undefined) {
+                    if(this.lastStates[id] === undefined) {
                         const user = this.getUser(id), channel = this.getChannel(newStates[id].channelId);
                         if(user && channel) {
                             const guild = this.getGuild(channel.guild_id);
-                            this.notificationAndLog({act: "Join", user, channel, guild});
+                            this.notificationAndLog({act: "Join", user, channel, guild}, noNotify);
+                            logChanged = true;
                         }
                     } else {
 
-                        if(lastStates[id].channelId != newStates[id].channelId) {
+                        if(this.lastStates[id].channelId !== newStates[id].channelId) {
 
                             const user = this.getUser(id), channel = this.getChannel(newStates[id].channelId);
+                            const lastChannel = this.getChannel(this.lastStates[id].channelId);
 
                             if(user && channel) {
                                 const guild = this.getGuild(channel.guild_id);
-                                this.notificationAndLog({act: "Move", user, channel, guild});
+                                this.notificationAndLog({act: "Move", user, channel, lastChannel, guild}, noNotify);
+                                logChanged = true;
                             }
 
                             continue;
@@ -113,21 +131,33 @@ module.exports = (Plugin, Api) => {
 
                 }
 
-                for(let id in lastStates) {
-                    if(localUser.id == id) continue;
-                    if(!this.monitoringUsers.includes(id)) continue;
+                for(let id in this.lastStates) {
+                    let noNotify = false;
 
-                    if(newStates[id] == undefined && id != localUser.id) {
-                        const user = this.getUser(id), channel = this.getChannel(lastStates[id].channelId);
+                    if(localUser.id === id) continue;
+                    if (!this.monitoringUsers.includes(id)) {
+                        if (this.settings.log.logAllUsers) noNotify = true;
+                        else continue;
+                    }
+
+                    if(newStates[id] === undefined && id !== localUser.id) {
+                        const user = this.getUser(id), channel = this.getChannel(this.lastStates[id].channelId);
                         if(user && channel) {
                             const guild = this.getGuild(channel.guild_id);
-                            this.notificationAndLog({act: "Leave", user, channel, guild});
+                            this.notificationAndLog({act: "Leave", user, channel, guild}, noNotify);
+                            logChanged = true;
                         }
                     }
                 }
 
-                lastStates = newStates;
+                this.lastStates = newStates;
 
+                if (logChanged && logSaveCounter >= logSaveCount) {
+                    logChanged = false;
+                    logSaveCounter = 0;
+
+                    this.savePersistLog();
+                }
             }, 500);
 
             this.focused = true;
@@ -154,6 +184,7 @@ module.exports = (Plugin, Api) => {
             window.removeEventListener("focus", this.focus);
             window.removeEventListener("blur", this.unfocus);
             document.removeEventListener("keydown", this.onKeyDown);
+            this.unpatchContextMenus();
             this.saveSettings();
         }
 
@@ -161,7 +192,7 @@ module.exports = (Plugin, Api) => {
             return this.getStatus(this.getCurrentUser().id);
         }
 
-        parseMatchlist() {
+        parseSettings() {
             this.monitoringGuilds = [];
             this.monitoringUsers = [];
             this.settings.monitoring.guilds.split(",").forEach(l => {
@@ -170,33 +201,119 @@ module.exports = (Plugin, Api) => {
             this.settings.monitoring.users.split(",").forEach(l => {
                 this.monitoringUsers.push(l.split("#")[0].trim());
             });
+
+            this.maxLogEntries = parseInt(this.settings.log.maxLogEntries, 10);
         }
 
-        showVoiceLogModal() {
+        loadPersistLog() {
+            const {lastStates, log} = PluginUtilities.loadData(this.getName() + 'Data', 'data', {
+                lastStates: {},
+                log: []
+            });
+            this.lastStates = lastStates;
+            this.log = log;
+        }
+
+        savePersistLog() {
+            PluginUtilities.saveData(this.getName() + 'Data', 'data', {
+                lastStates: this.lastStates,
+                log: this.log
+            });
+        }
+
+        unpatchContextMenus() {
+            this.contextMenuPatches.forEach(f => f());
+        }
+
+        patchContextMenus() {
+            this.patchGuildContextMenu();
+            this.patchVoiceChannelContextMenu();
+            this.patchUserContextMenu();
+        }
+
+        patchGuildContextMenu() {
+            const GuildContextMenu = WebpackModules.getModule(m => m.default && m.default.displayName == "GuildContextMenu");
+            this.contextMenuPatches.push(Patcher.after(GuildContextMenu, "default", (_, [props], retVal) => {
+                Utilities.getNestedProp(
+                    Utilities.findInReactTree(retVal, e => e && e.type && e.type.displayName === 'Menu'),
+                    'props.children'
+                ).push(DiscordContextMenu.buildMenuItem({
+                    label: this.getLocaleText("contextmenuVoiceLog"), action: () => {
+                        this.showVoiceLogModal({guildId: props.guild.id});
+                    }
+                }));
+            }));
+        }
+
+        patchVoiceChannelContextMenu() {
+            const VCCMs = WebpackModules.getModules(m => m.default && m.default.displayName == "ChannelListVoiceChannelContextMenu");
+            const patch = (_, [props], retVal) => {
+                Utilities.getNestedProp(
+                    Utilities.findInReactTree(retVal, e => e && e.type && e.type.displayName === 'Menu'),
+                    'props.children'
+                ).push(DiscordContextMenu.buildMenuItem({
+                    label: this.getLocaleText("contextmenuVoiceLog"), action: () => {
+                        this.showVoiceLogModal({channelId: props.channel.id});
+                    }
+                }));
+            };
+            VCCMs.forEach(VCCM => {
+                this.contextMenuPatches.push(Patcher.after(VCCM, "default", patch));
+            });
+        }
+
+        patchUserContextMenu() {
+            const UserContextMenu = WebpackModules.getModule(m => m.default && m.default.displayName == "GuildChannelUserContextMenu");
+            this.contextMenuPatches.push(Patcher.after(UserContextMenu, "default", (_, [props], retVal) => {
+                Utilities.getNestedProp(
+                    Utilities.findInReactTree(retVal, e => e && e.type && e.type.displayName === 'Menu'),
+                    'props.children'
+                ).push(DiscordContextMenu.buildMenuItem({
+                    label: this.getLocaleText("contextmenuVoiceLog"), action: () => {
+                        this.showVoiceLogModal({userId: props.user.id});
+                    }
+                }));
+            }));
+        }
+
+        showVoiceLogModal({userId, channelId, guildId}={}) {
             this.checkPatchI18n();
+            let log = this.log;
+            if (guildId !== undefined) log = log.filter(entry => entry.guildId === guildId);
+            if (channelId !== undefined) log = log.filter(entry => entry.channelId === channelId);
+            if (userId !== undefined) log = log.filter(entry => entry.userId === userId);
             const ce = DiscordModules.React.createElement;
             const AuditLog = DiscordClasses.AuditLog;
-            const children = this.log.map(log => {
-                const user = this.getUser(log.user_id);
-                const channel = this.getChannel(log.channel_id);
-                const guild = this.getGuild(log.guild_id);
+            const children = log.map(entry => {
+                const user = this.getUser(entry.userId);
+                const channel = this.getChannel(entry.channelId);
+                const guild = this.getGuild(entry.guildId);
+                if (user === undefined || channel === undefined || guild === undefined) return null;
                 return ce("div", { dangerouslySetInnerHTML:{ __html: Utilities.formatString(this.itemHTML, {
                     user_name: DOMTools.escapeHTML(user.username),
                     user_discrim: user.discriminator,
                     avatar_url: user.getAvatarURL(),
-                    action: DOMTools.escapeHTML(this.getLocaleText(`notification${log.act}`)),
+                    action: DOMTools.escapeHTML(this.getLocaleText(`notification${entry.act}`)),
                     channel_name: DOMTools.escapeHTML(channel.name),
                     guild_icon: guild.getIconURL(),
                     guild_name: DOMTools.escapeHTML(guild.name),
-                    timestamp: DOMTools.escapeHTML(new Date(log.timestamp).toLocaleString())
+                    timestamp: DOMTools.escapeHTML(new Date(entry.timestamp).toLocaleString())
                 }) } });
             });
             Modals.showModal(this.getLocaleText("modalLogTitle"), children, {cancelText: null});
         }
 
-        notificationAndLog({act, user, channel, guild}) {
-            this.log.push({user_id: user.id, channel_id: channel.id, guild_id: guild.id, timestamp: new Date().getTime(), act});
-            if(!(this.settings.options.suppressInDnd && this.getLocalStatus() == "dnd") && !this.afkChannels.includes(channel.id) && (act !== "Leave" || this.settings.options.notifyLeave)) {
+        pushLog(logEntry){
+            this.log.unshift(logEntry);
+            if (this.log.length > this.maxLogEntries) {
+                this.log.pop();
+            }
+        }
+
+        notificationAndLog({act, user, channel, lastChannel, guild}, noNotify) {
+            const lastChannelId = lastChannel === undefined ? null : lastChannel.id;
+            this.pushLog({userId: user.id, channelId: channel.id, lastChannelId, guildId: guild.id, timestamp: new Date().getTime(), act});
+            if(!noNotify && !(this.settings.options.suppressInDnd && this.getLocalStatus() == "dnd") && !this.afkChannels.includes(channel.id) && (act !== "Leave" || this.settings.options.notifyLeave)) {
                 this.checkPatchI18n();
                 const notification = new Notification(this.getLocaleText(`notification${act}Message`, {user: user.username, channel: channel.name, guild: guild.name}), {silent: this.settings.options.silentNotification, icon: user.getAvatarURL()});
                 if (act === "Join" || act === "Move") {
@@ -223,6 +340,14 @@ module.exports = (Plugin, Api) => {
                             return "檢查使用者 ( , 分隔，ID後可加#註解)";
                         case "config.monitoring.users.note":
                             return "使用<使用者ID>，多組時使用 , 來分隔，ID後可加#註解";
+                        case "config.log.name":
+                            return "記錄相關選項";
+                        case "config.log.logAllUsers.name":
+                            return "記錄所有使用者";
+                        case "config.log.persistLog.name":
+                            return "儲存紀錄";
+                        case "config.log.maxLogEntries.name":
+                            return "最大紀錄數量";
                         case "config.options.allGuilds.name":
                             return "檢查所有已加入伺服器";
                         case "config.options.notifyLeave.name":
@@ -249,6 +374,8 @@ module.exports = (Plugin, Api) => {
 
                         case "modalLogTitle":
                             return "語音通知紀錄";
+                        case "contextmenuVoiceLog":
+                            return "語音記錄";
                     }
                 case "en-US":
                 default:
@@ -265,6 +392,14 @@ module.exports = (Plugin, Api) => {
                             return "Monitoring User IDs (seprated with \",\" and append \"#\" after id for commenting)";
                         case "config.monitoring.users.note":
                             return "User IDs (seprated with \",\" and append \"#\" after id for commenting)";
+                        case "config.log.name":
+                            return "Log related";
+                        case "config.log.logAllUsers.name":
+                            return "Log all user actions";
+                        case "config.log.persistLog.name":
+                            return "Persist log";
+                        case "config.log.maxLogEntries.name":
+                            return "Max log entries counts";
                         case "config.options.allGuilds.name":
                             return "Monitor all guilds";
                         case "config.options.notifyLeave.name":
@@ -291,6 +426,8 @@ module.exports = (Plugin, Api) => {
 
                         case "modalLogTitle":
                             return "Voice Notification Log";
+                        case "contextmenuVoiceLog":
+                            return "Voice Log";
                     }
             }
         }
@@ -298,7 +435,7 @@ module.exports = (Plugin, Api) => {
         getSettingsPanel() {
             this.checkPatchI18n();
             const panel = this.buildSettingsPanel();
-            panel.addListener(this.parseMatchlist.bind(this));
+            panel.addListener(this.parseSettings.bind(this));
             return panel.getElement();
         }
 
