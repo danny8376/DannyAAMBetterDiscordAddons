@@ -259,14 +259,14 @@ module.exports = (() => {
                     channel_name: DOMTools.escapeHTML(channel.name),
                     guild_icon: guild.getIconURL(),
                     guild_name: DOMTools.escapeHTML(guild.name),
-                    timestamp: DOMTools.escapeHTML(log.timestamp)
+                    timestamp: DOMTools.escapeHTML(new Date(log.timestamp).toLocaleString())
                 }) } });
             });
             Modals.showModal(this.getLocaleText("modalLogTitle"), children, {cancelText: null});
         }
 
         notificationAndLog({act, user, channel, guild}) {
-            this.log.push({user_id: user.id, channel_id: channel.id, guild_id: guild.id, timestamp: new Date().toLocaleTimeString(), act});
+            this.log.push({user_id: user.id, channel_id: channel.id, guild_id: guild.id, timestamp: new Date().getTime(), act});
             if(!(this.settings.options.suppressInDnd && this.getLocalStatus() == "dnd") && !this.afkChannels.includes(channel.id) && (act !== "Leave" || this.settings.options.notifyLeave)) {
                 this.checkPatchI18n();
                 const notification = new Notification(this.getLocaleText(`notification${act}Message`, {user: user.username, channel: channel.name, guild: guild.name}), {silent: this.settings.options.silentNotification, icon: user.getAvatarURL()});
