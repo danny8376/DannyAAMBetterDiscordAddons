@@ -29,7 +29,7 @@
 @else@*/
 
 module.exports = (() => {
-    const config = {info:{name:"VoiceChannelUserJoinNotification",authors:[{name:"DannyAAM",discord_id:"275978619354873856",github_username:"danny8376",twitter_username:"DannyAAMtw"}],version:"0.1.0",description:"A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",github:"https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",github_raw:"https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"},changelog:[{title:"Rewritten",version:"0.1.0",items:["Rewritten with ZeresPluginLibrary as BDv2 Style Plugin."]},{title:"Thanks",items:["This plugins is originaly modified from VoiceChatNotifications by Metalloriff (https://github.com/Metalloriff/BetterDiscordPlugins/blob/a056291d1498deb721908cce45cff5625c7a7f1e/VoiceChatNotifications.plugin.js). Learned from his plugins how to implement this plugin. Thanks for him."]}],main:"index.js",defaultConfig:[{type:"category",id:"monitoring",name:"i18n:settingsMonitoringTitle",collapsible:false,shown:true,settings:[{type:"textbox",id:"guilds",name:"i18n:settingsGuildsTitle",note:"i18n:settingsGuildsNote",value:"000000000000000000#Example"},{type:"textbox",id:"users",name:"i18n:settingsUsersTitle",note:"i18n:settingsUsersNote",value:"000000000000000000#Example,000000000000000000"}]},{type:"category",id:"options",name:"i18n:settingsOptionsTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"allGuilds",name:"i18n:settingsAllGuilds",note:"",value:false},{type:"switch",id:"notifyLeave",name:"i18n:settingsNotifyLeave",note:"",value:false},{type:"switch",id:"silentNotification",name:"i18n:settingsSilentNofification",note:"",value:false},{type:"switch",id:"suppressInDnd",name:"i18n:settingsSuppressInDnd",note:"",value:true},{type:"switch",id:"logHotkey",name:"i18n:settingsLogHotkey",note:"",value:true}]}]};
+    const config = {info:{name:"VoiceChannelUserJoinNotification",authors:[{name:"DannyAAM",discord_id:"275978619354873856",github_username:"danny8376",twitter_username:"DannyAAMtw"}],version:"0.1.0",description:"A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",github:"https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",github_raw:"https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"},changelog:[{title:"Rewritten",version:"0.1.0",items:["Rewritten with ZeresPluginLibrary as BDv2 Style Plugin."]},{title:"Thanks",items:["This plugins is originaly modified from VoiceChatNotifications by Metalloriff (https://github.com/Metalloriff/BetterDiscordPlugins/blob/a056291d1498deb721908cce45cff5625c7a7f1e/VoiceChatNotifications.plugin.js). Learned from his plugins how to implement this plugin. Thanks for him."]}],main:"index.js",defaultConfig:[{type:"category",id:"monitoring",name:"i18n:settingsMonitoringTitle",collapsible:false,shown:true,settings:[{type:"textbox",id:"guilds",name:"i18n:settingsGuildsTitle",note:"i18n:settingsGuildsNote",value:"000000000000000000#Example"},{type:"textbox",id:"users",name:"i18n:settingsUsersTitle",note:"i18n:settingsUsersNote",value:"000000000000000000#Example,000000000000000000"}]},{type:"category",id:"options",name:"i18n:settingsOptionsTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"allGuilds",name:"i18n:settingsAllGuilds",note:"",value:false},{type:"switch",id:"notifyLeave",name:"i18n:settingsNotifyLeave",note:"",value:false},{type:"switch",id:"silentNotification",name:"i18n:settingsSilentNotification",note:"",value:false},{type:"switch",id:"suppressInDnd",name:"i18n:settingsSuppressInDnd",note:"",value:true},{type:"switch",id:"logHotkey",name:"i18n:settingsLogHotkey",note:"",value:true}]}]};
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
@@ -63,6 +63,8 @@ module.exports = (() => {
             this.monitoringUsers = [];
             this.afkChannels = [];
 
+            this.currentLocale = "";
+
             this.itemHTML = `<div class="flex-1xMQg5 flex-1O1GKY da-flex da-flex vertical-V37hAW flex-1O1GKY directionColumn-35P_nr justifyStart-2NDFzi alignStretch-DpGPf3 noWrap-3jynv6 auditLog-3jNbM6 da-auditLog marginBottom8-AtZOdT da-marginBottom8" style="flex: 1 1 auto;">
   <div class="header-GwIGlr da-header" aria-expanded="false" role="button" tabindex="0">
     <div class="avatar-_VZUJy da-avatar wrapper-3t9DeA da-wrapper" role="img" aria-hidden="true" style="width: 40px; height: 40px;">
@@ -91,9 +93,41 @@ module.exports = (() => {
             });
         }
 
+        checkPatchI18n() {
+            const sysLocale = this.getLocaleInfo().code;
+            if (this.currentLocale !== sysLocale) {
+                this.currentLocale = sysLocale;
+
+                // I18n patch
+                for (let s = 0; s < this._config.defaultConfig.length; s++) {
+                    const current = this._config.defaultConfig[s];
+                    this.patchI18n("config", current);
+
+                    if (current.type === "category") {
+                        for (let s = 0; s < current.settings.length; s++) {
+                            const subCurrent = current.settings[s];
+                            this.patchI18n(`config.${current.id}`, subCurrent);
+                        }
+                    }
+                }
+            }
+        }
+
+        patchI18n(parentName, defConfigObj) {
+            ["name", "note"].forEach(key => {
+                if (defConfigObj.hasOwnProperty(key)) {
+                    const localeText = this.getLocaleText(`${parentName}.${defConfigObj.id}.${key}`);
+                    if (typeof localeText !== "undefined") {
+                        defConfigObj[key] = localeText;
+                    }
+                }
+            });
+        }
+
         async onStart() {
             await new Promise(resolve => setTimeout(resolve, 1000));
             this.expandDCFuncs();
+            this.checkPatchI18n();
 
             this.log = [];
 
@@ -210,6 +244,7 @@ module.exports = (() => {
         }
 
         showVoiceLogModal() {
+            this.checkPatchI18n();
             const ce = DiscordModules.React.createElement;
             const AuditLog = DiscordClasses.AuditLog;
             const children = this.log.map(log => {
@@ -227,12 +262,13 @@ module.exports = (() => {
                     timestamp: DOMTools.escapeHTML(log.timestamp)
                 }) } });
             });
-            Modals.showModal("Voice Notification Log", children, {cancelText: null});
+            Modals.showModal(this.getLocaleText("modalLogTitle"), children, {cancelText: null});
         }
 
         notificationAndLog({act, user, channel, guild}) {
             this.log.push({user_id: user.id, channel_id: channel.id, guild_id: guild.id, timestamp: new Date().toLocaleTimeString(), act});
             if(!(this.settings.options.suppressInDnd && this.getLocalStatus() == "dnd") && !this.afkChannels.includes(channel.id) && (act !== "Leave" || this.settings.options.notifyLeave)) {
+                this.checkPatchI18n();
                 const notification = new Notification(this.getLocaleText(`notification${act}Message`, {user: user.username, channel: channel.name, guild: guild.name}), {silent: this.settings.options.silentNotification, icon: user.getAvatarURL()});
                 if (act === "Join" || act === "Move") {
                     notification.addEventListener("click", () => {
@@ -246,27 +282,27 @@ module.exports = (() => {
             switch (this.getLocaleInfo().code) {
                 case "zh-TW":
                     switch (id) {
-                        case "settingsMonitoringTitle":
+                        case "config.monitoring.name":
                             return "監測清單";
-                        case "settingsOptionsTitle":
+                        case "config.options.name":
                             return "其他選項";
-                        case "settingsGuildsTitle":
+                        case "config.monitoring.guilds.name":
                             return "檢查伺服器ID ( , 分隔，ID後可加#註解)";
-                        case "settingsGuildsNote":
+                        case "config.monitoring.guilds.note":
                             return "伺服器ID，多組時使用 , 來分隔，ID後可加#註解";
-                        case "settingsUsersTitle":
+                        case "config.monitoring.users.name":
                             return "檢查使用者 ( , 分隔，ID後可加#註解)";
-                        case "settingsUsersNote":
+                        case "config.monitoring.users.note":
                             return "使用<使用者ID>，多組時使用 , 來分隔，ID後可加#註解";
-                        case "settingsAllGuilds":
+                        case "config.options.allGuilds.name":
                             return "檢查所有已加入伺服器";
-                        case "settingsNotifyLeave":
+                        case "config.options.notifyLeave.name":
                             return "通知退出語音頻道";
-                        case "settingsSilentNofification":
+                        case "config.options.silentNotification.name":
                             return "使用無聲通知";
-                        case "settingsSuppressInDnd":
+                        case "config.options.suppressInDnd.name":
                             return "勿擾模式時關閉通知";
-                        case "settingsLogHotkey":
+                        case "config.options.logHotkey.name":
                             return "啟用 Alt+V 開啟記錄視窗";
                         
                         case "notificationJoinMessage":
@@ -281,31 +317,34 @@ module.exports = (() => {
                             return `${args.user} 離開 ${args.channel} @ ${args.guild}`;
                         case "notificationLeave":
                             return "離開";
+
+                        case "modalLogTitle":
+                            return "語音通知紀錄";
                     }
                 case "en-US":
                 default:
                     switch (id) {
-                        case "settingsMonitoringTitle":
+                        case "config.monitoring.name":
                             return "Monitoring List";
-                        case "settingsOptionsTitle":
+                        case "config.options.name":
                             return "Other Options";
-                        case "settingsGuildsTitle":
+                        case "config.monitoring.guilds.name":
                             return "Monitoring Guild IDs (seprated with \",\" and append \"#\" after id for commenting)";
-                        case "settingsGuildsNote":
+                        case "config.monitoring.guilds.note":
                             return "Guild IDs (seprated with \",\" and append \"#\" after id for commenting)";
-                        case "settingsUsersTitle":
+                        case "config.monitoring.users.name":
                             return "Monitoring User IDs (seprated with \",\" and append \"#\" after id for commenting)";
-                        case "settingsUsersNote":
+                        case "config.monitoring.users.note":
                             return "User IDs (seprated with \",\" and append \"#\" after id for commenting)";
-                        case "settingsAllGuilds":
+                        case "config.options.allGuilds.name":
                             return "Monitor all guilds";
-                        case "settingsNotifyLeave":
+                        case "config.options.notifyLeave.name":
                             return "Notify user leaves";
-                        case "settingsSilentNofification":
+                        case "config.options.silentNotification.name":
                             return "Silent notifications";
-                        case "settingsSuppressInDnd":
+                        case "config.options.suppressInDnd.name":
                             return "Suppress notifications while in Do Not Disturb";
-                        case "settingsLogHotkey":
+                        case "config.options.logHotkey.name":
                             return "Enable Alt+V Log Panel";
                         
                         case "notificationJoinMessage":
@@ -320,21 +359,15 @@ module.exports = (() => {
                             return `${args.user} left ${args.channel} @ ${args.guild}`;
                         case "notificationLeave":
                             return "Left";
+
+                        case "modalLogTitle":
+                            return "Voice Notification Log";
                     }
             }
         }
 
-
-        buildSetting(data) {
-            const setting = super.buildSetting(data);
-            if (setting !== null) {
-                if (setting.name.startsWith("i18n:")) setting.name = this.getLocaleText(setting.name.substr(5));
-                if (setting.note.startsWith("i18n:")) setting.note = this.getLocaleText(setting.note.substr(5));
-            }
-            return setting;
-        }
-
         getSettingsPanel() {
+            this.checkPatchI18n();
             const panel = this.buildSettingsPanel();
             panel.addListener(this.parseMatchlist.bind(this));
             return panel.getElement();

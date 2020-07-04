@@ -38,7 +38,7 @@
             "settings": [
                 {"type": "switch", "id": "allGuilds", "name": "i18n:settingsAllGuilds", "note": "", "value": false},
                 {"type": "switch", "id": "notifyLeave", "name": "i18n:settingsNotifyLeave", "note": "", "value": false},
-                {"type": "switch", "id": "silentNotification", "name": "i18n:settingsSilentNofification", "note": "", "value": false},
+                {"type": "switch", "id": "silentNotification", "name": "i18n:settingsSilentNotification", "note": "", "value": false},
                 {"type": "switch", "id": "suppressInDnd", "name": "i18n:settingsSuppressInDnd", "note": "", "value": true},
                 {"type": "switch", "id": "logHotkey", "name": "i18n:settingsLogHotkey", "note": "", "value": true}
             ]
