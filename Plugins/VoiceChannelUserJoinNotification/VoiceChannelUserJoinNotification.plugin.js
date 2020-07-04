@@ -351,7 +351,7 @@ module.exports = (() => {
             this.checkPatchI18n();
             let log = this.log;
             if (guildId !== undefined) log = log.filter(entry => entry.guildId === guildId);
-            if (channelId !== undefined) log = log.filter(entry => entry.channelId === channelId);
+            if (channelId !== undefined) log = log.filter(entry => entry.channelId === channelId || entry.lastChannelId === channelId);
             if (userId !== undefined) log = log.filter(entry => entry.userId === userId);
             const ce = DiscordModules.React.createElement;
             const AuditLog = DiscordClasses.AuditLog;
