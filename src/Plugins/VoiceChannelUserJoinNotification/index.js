@@ -307,6 +307,26 @@ module.exports = (Plugin, Api) => {
             }
         }
 
+        removeMonitoringList(type, id) {
+            let list;
+            switch (type) {
+                case "guild":
+                    list = this.settings.monitoring.guilds;
+                    break;
+                case "user":
+                    list = this.settings.monitoring.users;
+                    break;
+                default:
+                    return; // unknown type => skip
+            }
+
+            const idx = list.indexOf(id);
+            if (idx !== -1) {
+                list.splice(idx, 1);
+                this.saveSettings();
+            }
+        }
+
         unpatchContextMenus() {
             this.contextMenuPatches.forEach(f => f());
         }
@@ -330,12 +350,21 @@ module.exports = (Plugin, Api) => {
                         this.showVoiceLogModal({guildId: props.guild.id});
                     }
                 }));
-                menuChildren.push(DiscordContextMenu.buildMenuItem({
-                    id: "VCUJNContextmenuAddUserToMonitoring",
-                    label: this.getLocaleText("contextmenuAddToMonitoring"), action: () => {
-                        this.addMonitoringList("guild", props.guild.id);
-                    }
-                }));
+                if (this.settings.monitoring.guilds.includes(props.guild.id)) {
+                    menuChildren.push(DiscordContextMenu.buildMenuItem({
+                        id: "VCUJNContextmenuRemoveUserMonitoring",
+                        label: this.getLocaleText("contextmenuRemoveMonitoring"), action: () => {
+                            this.removeMonitoringList("guild", props.guild.id);
+                        }
+                    }));
+                } else {
+                    menuChildren.push(DiscordContextMenu.buildMenuItem({
+                        id: "VCUJNContextmenuAddUserMonitoring",
+                        label: this.getLocaleText("contextmenuAddMonitoring"), action: () => {
+                            this.addMonitoringList("guild", props.guild.id);
+                        }
+                    }));
+                }
             }));
         }
 
@@ -371,12 +400,21 @@ module.exports = (Plugin, Api) => {
                         this.showVoiceLogModal({userId: props.user.id});
                     }
                 }));
-                menuChildren.push(DiscordContextMenu.buildMenuItem({
-                    id: "VCUJNContextmenuAddGuildToMonitoring",
-                    label: this.getLocaleText("contextmenuAddToMonitoring"), action: () => {
-                        this.addMonitoringList("user", props.user.id);
-                    }
-                }));
+                if (this.settings.monitoring.users.includes(props.user.id)) {
+                    menuChildren.push(DiscordContextMenu.buildMenuItem({
+                        id: "VCUJNContextmenuRemoveGuildMonitoring",
+                        label: this.getLocaleText("contextmenuRemoveMonitoring"), action: () => {
+                            this.removeMonitoringList("user", props.user.id);
+                        }
+                    }));
+                } else {
+                    menuChildren.push(DiscordContextMenu.buildMenuItem({
+                        id: "VCUJNContextmenuAddGuildMonitoring",
+                        label: this.getLocaleText("contextmenuAddMonitoring"), action: () => {
+                            this.addMonitoringList("user", props.user.id);
+                        }
+                    }));
+                }
             };
             this.contextMenuPatches.push(Patcher.after(UserContextMenu, "default", patch));
             this.contextMenuPatches.push(Patcher.after(DMUserContextMenu, "default", patch));
@@ -478,8 +516,10 @@ module.exports = (Plugin, Api) => {
                             return "語音通知紀錄";
                         case "contextmenuVoiceLog":
                             return "語音記錄";
-                        case "contextmenuAddToMonitoring":
+                        case "contextmenuAddMonitoring":
                             return "加入語音監測";
+                        case "contextmenuRemoveMonitoring":
+                            return "移除語音監測";
                     }
                 case "en-US":
                 default:
@@ -528,8 +568,10 @@ module.exports = (Plugin, Api) => {
                             return "Voice Notification Log";
                         case "contextmenuVoiceLog":
                             return "Voice Log";
-                        case "contextmenuAddToMonitoring":
+                        case "contextmenuAddMonitoring":
                             return "Add to Monitoring";
+                        case "contextmenuRemoveMonitoring":
+                            return "Remove from Monitoring";
                     }
             }
         }
