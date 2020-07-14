@@ -29,7 +29,7 @@
 @else@*/
 
 module.exports = (() => {
-    const config = {info:{name:"VoiceChannelUserJoinNotification",authors:[{name:"DannyAAM",discord_id:"275978619354873856",github_username:"danny8376",twitter_username:"DannyAAMtw"}],version:"0.1.2",description:"A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",github:"https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",github_raw:"https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"},changelog:[{title:"More Log",items:["Ability to persist log across restart.","Ability to log even non-monitoring (for notification) users joined/moved/left."]},{title:"Thanks",type:"progress",items:["This plugins is originaly modified from VoiceChatNotifications by Metalloriff (https://github.com/Metalloriff/BetterDiscordPlugins/blob/a056291d1498deb721908cce45cff5625c7a7f1e/VoiceChatNotifications.plugin.js). Learned from his plugins how to implement this plugin. Thanks for him."]}],main:"index.js",defaultConfig:[{type:"category",id:"monitoring",name:"i18n:MonitoringTitle",collapsible:false,shown:true,settings:[{type:"textbox",id:"guilds",name:"i18n:GuildsTitle",note:"i18n:GuildsNote",value:"000000000000000000#Example"},{type:"textbox",id:"users",name:"i18n:UsersTitle",note:"i18n:UsersNote",value:"000000000000000000#Example,000000000000000000"}]},{type:"category",id:"log",name:"i18n:LogTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"logAllUsers",name:"i18n:LogAllUsers",note:"",value:false},{type:"switch",id:"persistLog",name:"i18n:PersistLog",note:"",value:false},{type:"textbox",id:"maxLogEntries",name:"i18n:MaxLogEntries",note:"",value:"250"}]},{type:"category",id:"options",name:"i18n:OptionsTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"allGuilds",name:"i18n:AllGuilds",note:"",value:false},{type:"switch",id:"notifyLeave",name:"i18n:NotifyLeave",note:"",value:false},{type:"switch",id:"silentNotification",name:"i18n:SilentNotification",note:"",value:false},{type:"switch",id:"suppressInDnd",name:"i18n:SuppressInDnd",note:"",value:true},{type:"switch",id:"logHotkey",name:"i18n:LogHotkey",note:"",value:true}]}]};
+    const config = {info:{name:"VoiceChannelUserJoinNotification",authors:[{name:"DannyAAM",discord_id:"275978619354873856",github_username:"danny8376",twitter_username:"DannyAAMtw"}],version:"0.1.2",description:"A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",github:"https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",github_raw:"https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"},changelog:[{title:"More Log",items:["Ability to persist log across restart.","Ability to log even non-monitoring (for notification) users joined/moved/left."]},{title:"Thanks",type:"progress",items:["This plugins is originaly modified from VoiceChatNotifications by Metalloriff (https://github.com/Metalloriff/BetterDiscordPlugins/blob/a056291d1498deb721908cce45cff5625c7a7f1e/VoiceChatNotifications.plugin.js). Learned from his plugins how to implement this plugin. Thanks for him."]}],main:"index.js",defaultConfig:[{type:"category",id:"monitoring",name:"i18n:MonitoringTitle",collapsible:false,shown:true,settings:[{type:"monitoringList",itemType:"guild",id:"guilds",name:"i18n:GuildsTitle",note:"",value:[]},{type:"monitoringList",itemType:"user",id:"users",name:"i18n:UsersTitle",note:"",value:[]}]},{type:"category",id:"log",name:"i18n:LogTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"logAllUsers",name:"i18n:LogAllUsers",note:"",value:false},{type:"switch",id:"persistLog",name:"i18n:PersistLog",note:"",value:false},{type:"textbox",id:"maxLogEntries",name:"i18n:MaxLogEntries",note:"",value:"250"}]},{type:"category",id:"options",name:"i18n:OptionsTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"allGuilds",name:"i18n:AllGuilds",note:"",value:false},{type:"switch",id:"notifyLeave",name:"i18n:NotifyLeave",note:"",value:false},{type:"switch",id:"silentNotification",name:"i18n:SilentNotification",note:"",value:false},{type:"switch",id:"suppressInDnd",name:"i18n:SuppressInDnd",note:"",value:true},{type:"switch",id:"logHotkey",name:"i18n:LogHotkey",note:"",value:true}]}]};
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
@@ -55,18 +55,130 @@ module.exports = (() => {
         const plugin = (Plugin, Api) => {
     const {Patcher, DiscordContextMenu, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
 
+    class SettingMonitoringList extends Api.Settings.SettingField {
+        constructor(name, itemType, note, value, onChange, options = {}) {
+            let itemListHTML, itemHTML;
+            const getGuild = ZeresPluginLibrary.WebpackModules.getByProps("getGuild")["getGuild"];
+            const getUser = ZeresPluginLibrary.WebpackModules.getByProps("getUser")["getUser"];
+            const containerHTML = `<div class="scroller-2wx7Hm da-scroller thin-1ybCId scrollerBase-289Jih fade-2kXiP2" role="list" style="overflow: hidden scroll; padding-right: 0px; max-height: 15em;">
+  <div class="listContent-2_qb-y da-listContent VCUJNSettingsItemList" style="">
+  </div>
+</div>
+`.trim()
+            const container = DOMTools.createElement(containerHTML);
+
+            super(name, note, onChange, container);
+
+            const list = container.querySelector(".VCUJNSettingsItemList");
+            const itemFailedHTML = `<div class="flex-1xMQg5 flex-1O1GKY da-flex da-flex vertical-V37hAW flex-1O1GKY directionColumn-35P_nr justifyStart-2NDFzi alignStretch-DpGPf3 noWrap-3jynv6 auditLog-3jNbM6 da-auditLog marginBottom8-AtZOdT da-marginBottom8" style="flex: 1 1 auto;">
+  <div class="header-GwIGlr da-header" aria-expanded="false" role="button" tabindex="0">
+    <div class="avatar-_VZUJy da-avatar wrapper-3t9DeA da-wrapper" role="img" aria-hidden="true" style="width: 40px; height: 40px;">
+      <svg width="49" height="40" viewBox="0 0 49 40" class="mask-1l8v16 da-mask svg-2V3M55 da-svg" aria-hidden="true">
+        <foreignObject x="0" y="0" width="40" height="40" mask="url(#svg-mask-avatar-default)">
+          <img src="/assets/322c936a8c8be1b803cd94861bdfa868.png" alt=" " class="avatar-VxgULZ da-avatar" aria-hidden="true">
+        </foreignObject>
+      </svg>
+    </div>
+    <div class="flex-1xMQg5 flex-1O1GKY da-flex da-flex vertical-V37hAW flex-1O1GKY directionColumn-35P_nr justifyStart-2NDFzi alignStretch-DpGPf3 noWrap-3jynv6 timeWrap-2DasL6 da-timeWrap" style="flex: 1 1 auto;">
+      <div class="overflowEllipsis-1PBFxQ da-overflowEllipsis flexChild-faoVW3 da-flexChild" style="flex: 1 1 auto; word-wrap: break-word; white-space: normal;">
+        <span><strong>Fail to loading -> ID: {{id}}</strong></span>
+      </div>
+    </div>
+    <div style="float: right; cursor: pointer;" class="VCUJNRemove"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" style="width: 18px; height: 18px;"><g class="background" fill="none" fill-rule="evenodd"><path d="M0 0h12v12H0"></path><path class="fill" fill="#dcddde" d="M9.5 3.205L8.795 2.5 6 5.295 3.205 2.5l-.705.705L5.295 6 2.5 8.795l.705.705L6 6.705 8.795 9.5l.705-.705L6.705 6"></path></g></svg></div>
+  </div>
+</div>
+
+`.trim();
+            switch (itemType) {
+                case "guild":
+                    itemHTML = `<div class="flex-1xMQg5 flex-1O1GKY da-flex da-flex vertical-V37hAW flex-1O1GKY directionColumn-35P_nr justifyStart-2NDFzi alignStretch-DpGPf3 noWrap-3jynv6 auditLog-3jNbM6 da-auditLog marginBottom8-AtZOdT da-marginBottom8" style="flex: 1 1 auto;">
+  <div class="header-GwIGlr da-header" aria-expanded="false" role="button" tabindex="0">
+    <div class="avatar-_VZUJy da-avatar wrapper-3t9DeA da-wrapper" role="img" aria-hidden="true" style="width: 40px; height: 40px;">
+      <svg width="49" height="40" viewBox="0 0 49 40" class="mask-1l8v16 da-mask svg-2V3M55 da-svg" aria-hidden="true">
+        <foreignObject x="0" y="0" width="40" height="40" mask="url(#svg-mask-avatar-default)">
+          <img src="{{guild_icon}}" alt=" " class="avatar-VxgULZ da-avatar" aria-hidden="true">
+        </foreignObject>
+      </svg>
+    </div>
+    <div class="flex-1xMQg5 flex-1O1GKY da-flex da-flex vertical-V37hAW flex-1O1GKY directionColumn-35P_nr justifyStart-2NDFzi alignStretch-DpGPf3 noWrap-3jynv6 timeWrap-2DasL6 da-timeWrap" style="flex: 1 1 auto;">
+      <div class="overflowEllipsis-1PBFxQ da-overflowEllipsis flexChild-faoVW3 da-flexChild" style="flex: 1 1 auto; word-wrap: break-word; white-space: normal;">
+        <span class="targetChannel-TrRFlx da-targetChannel"><strong>{{guild_name}}</strong></span>
+      </div>
+    </div>
+    <div style="float: right; cursor: pointer;" class="VCUJNRemove"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" style="width: 18px; height: 18px;"><g class="background" fill="none" fill-rule="evenodd"><path d="M0 0h12v12H0"></path><path class="fill" fill="#dcddde" d="M9.5 3.205L8.795 2.5 6 5.295 3.205 2.5l-.705.705L5.295 6 2.5 8.795l.705.705L6 6.705 8.795 9.5l.705-.705L6.705 6"></path></g></svg></div>
+  </div>
+</div>
+
+`.trim();
+                    value.forEach(item => {
+                        const guild = getGuild(item);
+                        const dom = DOMTools.createElement(guild ? Utilities.formatString(itemHTML, {
+                    		guild_icon: guild.getIconURL(),
+                    		guild_name: DOMTools.escapeHTML(guild.name),
+                        }) : Utilities.formatString(itemFailedHTML, { id: item }));
+                        dom.querySelector(".VCUJNRemove").addEventListener("click", () => {
+                            const idx = value.indexOf(item);
+                            if (idx !== -1) {
+                                value.splice(idx, 1);
+                                dom.remove();
+                                this.onChange(value);
+                            }
+                        });
+                        list.append(dom);
+                    });
+                    break;
+                case "user":
+                    itemHTML = `<div class="flex-1xMQg5 flex-1O1GKY da-flex da-flex vertical-V37hAW flex-1O1GKY directionColumn-35P_nr justifyStart-2NDFzi alignStretch-DpGPf3 noWrap-3jynv6 auditLog-3jNbM6 da-auditLog marginBottom8-AtZOdT da-marginBottom8" style="flex: 1 1 auto;">
+  <div class="header-GwIGlr da-header" aria-expanded="false" role="button" tabindex="0">
+    <div class="avatar-_VZUJy da-avatar wrapper-3t9DeA da-wrapper" role="img" aria-hidden="true" style="width: 40px; height: 40px;">
+      <svg width="49" height="40" viewBox="0 0 49 40" class="mask-1l8v16 da-mask svg-2V3M55 da-svg" aria-hidden="true">
+        <foreignObject x="0" y="0" width="40" height="40" mask="url(#svg-mask-avatar-default)">
+          <img src="{{avatar_url}}" alt=" " class="avatar-VxgULZ da-avatar" aria-hidden="true">
+        </foreignObject>
+      </svg>
+    </div>
+    <div class="flex-1xMQg5 flex-1O1GKY da-flex da-flex vertical-V37hAW flex-1O1GKY directionColumn-35P_nr justifyStart-2NDFzi alignStretch-DpGPf3 noWrap-3jynv6 timeWrap-2DasL6 da-timeWrap" style="flex: 1 1 auto;">
+      <div class="overflowEllipsis-1PBFxQ da-overflowEllipsis flexChild-faoVW3 da-flexChild" style="flex: 1 1 auto; word-wrap: break-word; white-space: normal;">
+        <span class="userHook-3AdCBF da-userHook"><span>{{user_name}}</span><span class="discrim-3rYTMj da-discrim">#{{user_discrim}}</span></span>
+      </div>
+    </div>
+    <div style="float: right; cursor: pointer;" class="VCUJNRemove"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" style="width: 18px; height: 18px;"><g class="background" fill="none" fill-rule="evenodd"><path d="M0 0h12v12H0"></path><path class="fill" fill="#dcddde" d="M9.5 3.205L8.795 2.5 6 5.295 3.205 2.5l-.705.705L5.295 6 2.5 8.795l.705.705L6 6.705 8.795 9.5l.705-.705L6.705 6"></path></g></svg></div>
+  </div>
+</div>
+
+`.trim();
+                    value.forEach(item => {
+                        const user = getUser(item);
+                        const dom = DOMTools.createElement(user ? Utilities.formatString(itemHTML, {
+                    		user_name: DOMTools.escapeHTML(user.username),
+                    		user_discrim: user.discriminator,
+                    		avatar_url: user.getAvatarURL(),
+                        }) : Utilities.formatString(itemFailedHTML, { id: item }));
+                        dom.querySelector(".VCUJNRemove").addEventListener("click", () => {
+                            const idx = value.indexOf(item);
+                            if (idx !== -1) {
+                                value.splice(idx, 1);
+                                dom.remove();
+                                this.onChange(value);
+                            }
+                        });
+                        list.append(dom);
+                    });
+                    break;
+            }
+        }
+    }
+
     return class VoiceChannelUserJoinNotification extends Plugin {
         constructor() {
             super();
 
-            this.monitoringGuilds = [];
-            this.monitoringUsers = [];
             this.afkChannels = [];
             this.maxLogEntries = 0;
 
             this.currentLocale = "";
 
-            this.itemHTML = `<div class="flex-1xMQg5 flex-1O1GKY da-flex da-flex vertical-V37hAW flex-1O1GKY directionColumn-35P_nr justifyStart-2NDFzi alignStretch-DpGPf3 noWrap-3jynv6 auditLog-3jNbM6 da-auditLog marginBottom8-AtZOdT da-marginBottom8" style="flex: 1 1 auto;">
+            this.logItemHTML = `<div class="flex-1xMQg5 flex-1O1GKY da-flex da-flex vertical-V37hAW flex-1O1GKY directionColumn-35P_nr justifyStart-2NDFzi alignStretch-DpGPf3 noWrap-3jynv6 auditLog-3jNbM6 da-auditLog marginBottom8-AtZOdT da-marginBottom8" style="flex: 1 1 auto;">
   <div class="header-GwIGlr da-header" aria-expanded="false" role="button" tabindex="0">
     <div class="avatar-_VZUJy da-avatar wrapper-3t9DeA da-wrapper" role="img" aria-hidden="true" style="width: 40px; height: 40px;">
       <svg width="49" height="40" viewBox="0 0 49 40" class="mask-1l8v16 da-mask svg-2V3M55 da-svg" aria-hidden="true">
@@ -84,7 +196,7 @@ module.exports = (() => {
   </div>
 </div>
 
-`;
+`.trim();
         }
 
         expandDCFuncs() {
@@ -135,6 +247,7 @@ module.exports = (() => {
 
             const localUser = this.getCurrentUser();
 
+            this.migrateOldMonitoringList();
             this.parseSettings();
             if(this.settings.log.persistLog) {
                 this.loadPersistLog();
@@ -150,8 +263,8 @@ module.exports = (() => {
             this.update = setInterval(() => {
                 if (this.settings.log.persistLog && logSaveCounter < logSaveCount) logSaveCounter++;
 
-                if (!this.settings.options.allGuilds && this.monitoringGuilds.length == 0) return;
-                if (this.monitoringUsers.length == 0) return;
+                if (!this.settings.options.allGuilds && this.settings.monitoring.guilds.length == 0) return;
+                if (this.settings.monitoring.users.length == 0) return;
             
                 const allGuilds = [];
                 this.afkChannels = [];
@@ -161,7 +274,7 @@ module.exports = (() => {
                     if (g.afkChannelId) this.afkChannels.push(g.afkChannelId);
                 });
             
-                const targetGuilds = this.settings.allGuilds ? allGuilds : this.monitoringGuilds;
+                const targetGuilds = this.settings.allGuilds ? allGuilds : this.settings.monitoring.guilds;
             
                 const newStates = targetGuilds.map(gid => this.getVoiceStates(gid)).reduce((a, v) => {return {...v, ...a}});
 
@@ -169,7 +282,7 @@ module.exports = (() => {
                     let noNotify = false;
 
                     if(localUser.id === id) continue;
-                    if (!this.monitoringUsers.includes(id)) {
+                    if (!this.settings.monitoring.users.includes(id)) {
                         if (this.settings.log.logAllUsers) noNotify = true;
                         else continue;
                     }
@@ -206,7 +319,7 @@ module.exports = (() => {
                     let noNotify = false;
 
                     if(localUser.id === id) continue;
-                    if (!this.monitoringUsers.includes(id)) {
+                    if (!this.settings.monitoring.users.includes(id)) {
                         if (this.settings.log.logAllUsers) noNotify = true;
                         else continue;
                     }
@@ -263,16 +376,28 @@ module.exports = (() => {
             return this.getStatus(this.getCurrentUser().id);
         }
 
-        parseSettings() {
-            this.monitoringGuilds = [];
-            this.monitoringUsers = [];
-            this.settings.monitoring.guilds.split(",").forEach(l => {
-                this.monitoringGuilds.push(l.split("#")[0].trim());
-            });
-            this.settings.monitoring.users.split(",").forEach(l => {
-                this.monitoringUsers.push(l.split("#")[0].trim());
-            });
+        migrateOldMonitoringList() {
+            let didMigration = false;
+            if (typeof this.settings.monitoring.guilds === "string") {
+                const oriVal = this.settings.monitoring.guilds;
+                this.settings.monitoring.guilds = [];
+                oriVal.split(",").forEach(l => {
+                    this.settings.monitoring.guilds.push(l.split("#")[0].trim());
+                });
+                didMigration = true;
+            }
+            if (typeof this.settings.monitoring.users === "string") {
+                const oriVal = this.settings.monitoring.users;
+                this.settings.monitoring.users = [];
+                oriVal.split(",").forEach(l => {
+                    this.settings.monitoring.users.push(l.split("#")[0].trim());
+                });
+                didMigration = true;
+            }
+            if (didMigration) this.saveSettings();
+        }
 
+        parseSettings() {
             this.maxLogEntries = parseInt(this.settings.log.maxLogEntries, 10);
         }
 
@@ -292,6 +417,25 @@ module.exports = (() => {
             });
         }
 
+        addMonitoringList(type, id) {
+            let list;
+            switch (type) {
+                case "guild":
+                    list = this.settings.monitoring.guilds;
+                    break;
+                case "user":
+                    list = this.settings.monitoring.users;
+                    break;
+                default:
+                    return; // unknown type => skip
+            }
+
+            if (!list.includes(id)) {
+                list.push(id);
+                this.saveSettings();
+            }
+        }
+
         unpatchContextMenus() {
             this.contextMenuPatches.forEach(f => f());
         }
@@ -305,12 +449,20 @@ module.exports = (() => {
         patchGuildContextMenu() {
             const GuildContextMenu = WebpackModules.getModule(m => m.default && m.default.displayName == "GuildContextMenu");
             this.contextMenuPatches.push(Patcher.after(GuildContextMenu, "default", (_, [props], retVal) => {
-                Utilities.getNestedProp(
+                const menuChildren = Utilities.getNestedProp(
                     Utilities.findInReactTree(retVal, e => e && e.type && e.type.displayName === 'Menu'),
                     'props.children'
-                ).push(DiscordContextMenu.buildMenuItem({
+                );
+                menuChildren.push(DiscordContextMenu.buildMenuItem({
+                    id: "VCUJNContextmenuGuildVoiceLog",
                     label: this.getLocaleText("contextmenuVoiceLog"), action: () => {
                         this.showVoiceLogModal({guildId: props.guild.id});
+                    }
+                }));
+                menuChildren.push(DiscordContextMenu.buildMenuItem({
+                    id: "VCUJNContextmenuAddUserToMonitoring",
+                    label: this.getLocaleText("contextmenuAddToMonitoring"), action: () => {
+                        this.addMonitoringList("guild", props.guild.id);
                     }
                 }));
             }));
@@ -323,6 +475,7 @@ module.exports = (() => {
                     Utilities.findInReactTree(retVal, e => e && e.type && e.type.displayName === 'Menu'),
                     'props.children'
                 ).push(DiscordContextMenu.buildMenuItem({
+                    id: "VCUJNContextmenuChannelVoiceLog",
                     label: this.getLocaleText("contextmenuVoiceLog"), action: () => {
                         this.showVoiceLogModal({channelId: props.channel.id});
                     }
@@ -335,16 +488,27 @@ module.exports = (() => {
 
         patchUserContextMenu() {
             const UserContextMenu = WebpackModules.getModule(m => m.default && m.default.displayName == "GuildChannelUserContextMenu");
-            this.contextMenuPatches.push(Patcher.after(UserContextMenu, "default", (_, [props], retVal) => {
-                Utilities.getNestedProp(
+            const DMUserContextMenu = WebpackModules.getModule(m => m.default && m.default.displayName == "DMUserContextMenu");
+            const patch = (_, [props], retVal) => {
+                const menuChildren = Utilities.getNestedProp(
                     Utilities.findInReactTree(retVal, e => e && e.type && e.type.displayName === 'Menu'),
                     'props.children'
-                ).push(DiscordContextMenu.buildMenuItem({
+                );
+                menuChildren.push(DiscordContextMenu.buildMenuItem({
+                    id: "VCUJNContextmenuUserVoiceLog",
                     label: this.getLocaleText("contextmenuVoiceLog"), action: () => {
                         this.showVoiceLogModal({userId: props.user.id});
                     }
                 }));
-            }));
+                menuChildren.push(DiscordContextMenu.buildMenuItem({
+                    id: "VCUJNContextmenuAddGuildToMonitoring",
+                    label: this.getLocaleText("contextmenuAddToMonitoring"), action: () => {
+                        this.addMonitoringList("user", props.user.id);
+                    }
+                }));
+            };
+            this.contextMenuPatches.push(Patcher.after(UserContextMenu, "default", patch));
+            this.contextMenuPatches.push(Patcher.after(DMUserContextMenu, "default", patch));
         }
 
         showVoiceLogModal({userId, channelId, guildId}={}) {
@@ -360,7 +524,7 @@ module.exports = (() => {
                 const channel = this.getChannel(entry.channelId);
                 const guild = this.getGuild(entry.guildId);
                 if (user === undefined || channel === undefined || guild === undefined) return null;
-                return ce("div", { dangerouslySetInnerHTML:{ __html: Utilities.formatString(this.itemHTML, {
+                return ce("div", { dangerouslySetInnerHTML:{ __html: Utilities.formatString(this.logItemHTML, {
                     user_name: DOMTools.escapeHTML(user.username),
                     user_discrim: user.discriminator,
                     avatar_url: user.getAvatarURL(),
@@ -404,13 +568,9 @@ module.exports = (() => {
                         case "config.options.name":
                             return "其他選項";
                         case "config.monitoring.guilds.name":
-                            return "檢查伺服器ID ( , 分隔，ID後可加#註解)";
-                        case "config.monitoring.guilds.note":
-                            return "伺服器ID，多組時使用 , 來分隔，ID後可加#註解";
+                            return "監測伺服器清單(使用伺服器右鍵選單增加)";
                         case "config.monitoring.users.name":
-                            return "檢查使用者 ( , 分隔，ID後可加#註解)";
-                        case "config.monitoring.users.note":
-                            return "使用<使用者ID>，多組時使用 , 來分隔，ID後可加#註解";
+                            return "監測使用者清單(使用使用者右鍵選單增加)";
                         case "config.log.name":
                             return "記錄相關選項";
                         case "config.log.logAllUsers.name":
@@ -447,6 +607,8 @@ module.exports = (() => {
                             return "語音通知紀錄";
                         case "contextmenuVoiceLog":
                             return "語音記錄";
+                        case "contextmenuAddToMonitoring":
+                            return "加入語音監測";
                     }
                 case "en-US":
                 default:
@@ -456,13 +618,9 @@ module.exports = (() => {
                         case "config.options.name":
                             return "Other Options";
                         case "config.monitoring.guilds.name":
-                            return "Monitoring Guild IDs (seprated with \",\" and append \"#\" after id for commenting)";
-                        case "config.monitoring.guilds.note":
-                            return "Guild IDs (seprated with \",\" and append \"#\" after id for commenting)";
+                            return "Monitoring Guild List (Add with guild context menu)";
                         case "config.monitoring.users.name":
-                            return "Monitoring User IDs (seprated with \",\" and append \"#\" after id for commenting)";
-                        case "config.monitoring.users.note":
-                            return "User IDs (seprated with \",\" and append \"#\" after id for commenting)";
+                            return "Monitoring User List (Add with user context menu)";
                         case "config.log.name":
                             return "Log related";
                         case "config.log.logAllUsers.name":
@@ -499,8 +657,21 @@ module.exports = (() => {
                             return "Voice Notification Log";
                         case "contextmenuVoiceLog":
                             return "Voice Log";
+                        case "contextmenuAddToMonitoring":
+                            return "Add to Monitoring";
                     }
             }
+        }
+
+        buildSetting(data) {
+            const {name, note, type, itemType, value, onChange, id} = data;
+            let setting = null;
+            if (type === "monitoringList") {
+                setting = new SettingMonitoringList(name, itemType, note, value, onChange)
+                if (id) setting.id = id;
+            }
+            else setting = super.buildSetting(data);
+            return setting;
         }
 
         getSettingsPanel() {

@@ -2,18 +2,72 @@
 module.exports = (Plugin, Api) => {
     const {Patcher, DiscordContextMenu, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
 
+    class SettingMonitoringList extends Api.Settings.SettingField {
+        constructor(name, itemType, note, value, onChange, options = {}) {
+            let itemListHTML, itemHTML;
+            const getGuild = ZeresPluginLibrary.WebpackModules.getByProps("getGuild")["getGuild"];
+            const getUser = ZeresPluginLibrary.WebpackModules.getByProps("getUser")["getUser"];
+            const containerHTML = require("settings_container.html").trim()
+            const container = DOMTools.createElement(containerHTML);
+
+            super(name, note, onChange, container);
+
+            const list = container.querySelector(".VCUJNSettingsItemList");
+            const itemFailedHTML = require("settings_item_failed.html").trim();
+            switch (itemType) {
+                case "guild":
+                    itemHTML = require(`settings_item_guild.html`).trim();
+                    value.forEach(item => {
+                        const guild = getGuild(item);
+                        const dom = DOMTools.createElement(guild ? Utilities.formatString(itemHTML, {
+                    		guild_icon: guild.getIconURL(),
+                    		guild_name: DOMTools.escapeHTML(guild.name),
+                        }) : Utilities.formatString(itemFailedHTML, { id: item }));
+                        dom.querySelector(".VCUJNRemove").addEventListener("click", () => {
+                            const idx = value.indexOf(item);
+                            if (idx !== -1) {
+                                value.splice(idx, 1);
+                                dom.remove();
+                                this.onChange(value);
+                            }
+                        });
+                        list.append(dom);
+                    });
+                    break;
+                case "user":
+                    itemHTML = require("settings_item_user.html").trim();
+                    value.forEach(item => {
+                        const user = getUser(item);
+                        const dom = DOMTools.createElement(user ? Utilities.formatString(itemHTML, {
+                    		user_name: DOMTools.escapeHTML(user.username),
+                    		user_discrim: user.discriminator,
+                    		avatar_url: user.getAvatarURL(),
+                        }) : Utilities.formatString(itemFailedHTML, { id: item }));
+                        dom.querySelector(".VCUJNRemove").addEventListener("click", () => {
+                            const idx = value.indexOf(item);
+                            if (idx !== -1) {
+                                value.splice(idx, 1);
+                                dom.remove();
+                                this.onChange(value);
+                            }
+                        });
+                        list.append(dom);
+                    });
+                    break;
+            }
+        }
+    }
+
     return class VoiceChannelUserJoinNotification extends Plugin {
         constructor() {
             super();
 
-            this.monitoringGuilds = [];
-            this.monitoringUsers = [];
             this.afkChannels = [];
             this.maxLogEntries = 0;
 
             this.currentLocale = "";
 
-            this.itemHTML = require("item.html");
+            this.logItemHTML = require("log_item.html").trim();
         }
 
         expandDCFuncs() {
@@ -64,6 +118,7 @@ module.exports = (Plugin, Api) => {
 
             const localUser = this.getCurrentUser();
 
+            this.migrateOldMonitoringList();
             this.parseSettings();
             if(this.settings.log.persistLog) {
                 this.loadPersistLog();
@@ -79,8 +134,8 @@ module.exports = (Plugin, Api) => {
             this.update = setInterval(() => {
                 if (this.settings.log.persistLog && logSaveCounter < logSaveCount) logSaveCounter++;
 
-                if (!this.settings.options.allGuilds && this.monitoringGuilds.length == 0) return;
-                if (this.monitoringUsers.length == 0) return;
+                if (!this.settings.options.allGuilds && this.settings.monitoring.guilds.length == 0) return;
+                if (this.settings.monitoring.users.length == 0) return;
             
                 const allGuilds = [];
                 this.afkChannels = [];
@@ -90,7 +145,7 @@ module.exports = (Plugin, Api) => {
                     if (g.afkChannelId) this.afkChannels.push(g.afkChannelId);
                 });
             
-                const targetGuilds = this.settings.allGuilds ? allGuilds : this.monitoringGuilds;
+                const targetGuilds = this.settings.allGuilds ? allGuilds : this.settings.monitoring.guilds;
             
                 const newStates = targetGuilds.map(gid => this.getVoiceStates(gid)).reduce((a, v) => {return {...v, ...a}});
 
@@ -98,7 +153,7 @@ module.exports = (Plugin, Api) => {
                     let noNotify = false;
 
                     if(localUser.id === id) continue;
-                    if (!this.monitoringUsers.includes(id)) {
+                    if (!this.settings.monitoring.users.includes(id)) {
                         if (this.settings.log.logAllUsers) noNotify = true;
                         else continue;
                     }
@@ -135,7 +190,7 @@ module.exports = (Plugin, Api) => {
                     let noNotify = false;
 
                     if(localUser.id === id) continue;
-                    if (!this.monitoringUsers.includes(id)) {
+                    if (!this.settings.monitoring.users.includes(id)) {
                         if (this.settings.log.logAllUsers) noNotify = true;
                         else continue;
                     }
@@ -192,16 +247,28 @@ module.exports = (Plugin, Api) => {
             return this.getStatus(this.getCurrentUser().id);
         }
 
-        parseSettings() {
-            this.monitoringGuilds = [];
-            this.monitoringUsers = [];
-            this.settings.monitoring.guilds.split(",").forEach(l => {
-                this.monitoringGuilds.push(l.split("#")[0].trim());
-            });
-            this.settings.monitoring.users.split(",").forEach(l => {
-                this.monitoringUsers.push(l.split("#")[0].trim());
-            });
+        migrateOldMonitoringList() {
+            let didMigration = false;
+            if (typeof this.settings.monitoring.guilds === "string") {
+                const oriVal = this.settings.monitoring.guilds;
+                this.settings.monitoring.guilds = [];
+                oriVal.split(",").forEach(l => {
+                    this.settings.monitoring.guilds.push(l.split("#")[0].trim());
+                });
+                didMigration = true;
+            }
+            if (typeof this.settings.monitoring.users === "string") {
+                const oriVal = this.settings.monitoring.users;
+                this.settings.monitoring.users = [];
+                oriVal.split(",").forEach(l => {
+                    this.settings.monitoring.users.push(l.split("#")[0].trim());
+                });
+                didMigration = true;
+            }
+            if (didMigration) this.saveSettings();
+        }
 
+        parseSettings() {
             this.maxLogEntries = parseInt(this.settings.log.maxLogEntries, 10);
         }
 
@@ -221,6 +288,25 @@ module.exports = (Plugin, Api) => {
             });
         }
 
+        addMonitoringList(type, id) {
+            let list;
+            switch (type) {
+                case "guild":
+                    list = this.settings.monitoring.guilds;
+                    break;
+                case "user":
+                    list = this.settings.monitoring.users;
+                    break;
+                default:
+                    return; // unknown type => skip
+            }
+
+            if (!list.includes(id)) {
+                list.push(id);
+                this.saveSettings();
+            }
+        }
+
         unpatchContextMenus() {
             this.contextMenuPatches.forEach(f => f());
         }
@@ -234,12 +320,20 @@ module.exports = (Plugin, Api) => {
         patchGuildContextMenu() {
             const GuildContextMenu = WebpackModules.getModule(m => m.default && m.default.displayName == "GuildContextMenu");
             this.contextMenuPatches.push(Patcher.after(GuildContextMenu, "default", (_, [props], retVal) => {
-                Utilities.getNestedProp(
+                const menuChildren = Utilities.getNestedProp(
                     Utilities.findInReactTree(retVal, e => e && e.type && e.type.displayName === 'Menu'),
                     'props.children'
-                ).push(DiscordContextMenu.buildMenuItem({
+                );
+                menuChildren.push(DiscordContextMenu.buildMenuItem({
+                    id: "VCUJNContextmenuGuildVoiceLog",
                     label: this.getLocaleText("contextmenuVoiceLog"), action: () => {
                         this.showVoiceLogModal({guildId: props.guild.id});
+                    }
+                }));
+                menuChildren.push(DiscordContextMenu.buildMenuItem({
+                    id: "VCUJNContextmenuAddUserToMonitoring",
+                    label: this.getLocaleText("contextmenuAddToMonitoring"), action: () => {
+                        this.addMonitoringList("guild", props.guild.id);
                     }
                 }));
             }));
@@ -252,6 +346,7 @@ module.exports = (Plugin, Api) => {
                     Utilities.findInReactTree(retVal, e => e && e.type && e.type.displayName === 'Menu'),
                     'props.children'
                 ).push(DiscordContextMenu.buildMenuItem({
+                    id: "VCUJNContextmenuChannelVoiceLog",
                     label: this.getLocaleText("contextmenuVoiceLog"), action: () => {
                         this.showVoiceLogModal({channelId: props.channel.id});
                     }
@@ -264,16 +359,27 @@ module.exports = (Plugin, Api) => {
 
         patchUserContextMenu() {
             const UserContextMenu = WebpackModules.getModule(m => m.default && m.default.displayName == "GuildChannelUserContextMenu");
-            this.contextMenuPatches.push(Patcher.after(UserContextMenu, "default", (_, [props], retVal) => {
-                Utilities.getNestedProp(
+            const DMUserContextMenu = WebpackModules.getModule(m => m.default && m.default.displayName == "DMUserContextMenu");
+            const patch = (_, [props], retVal) => {
+                const menuChildren = Utilities.getNestedProp(
                     Utilities.findInReactTree(retVal, e => e && e.type && e.type.displayName === 'Menu'),
                     'props.children'
-                ).push(DiscordContextMenu.buildMenuItem({
+                );
+                menuChildren.push(DiscordContextMenu.buildMenuItem({
+                    id: "VCUJNContextmenuUserVoiceLog",
                     label: this.getLocaleText("contextmenuVoiceLog"), action: () => {
                         this.showVoiceLogModal({userId: props.user.id});
                     }
                 }));
-            }));
+                menuChildren.push(DiscordContextMenu.buildMenuItem({
+                    id: "VCUJNContextmenuAddGuildToMonitoring",
+                    label: this.getLocaleText("contextmenuAddToMonitoring"), action: () => {
+                        this.addMonitoringList("user", props.user.id);
+                    }
+                }));
+            };
+            this.contextMenuPatches.push(Patcher.after(UserContextMenu, "default", patch));
+            this.contextMenuPatches.push(Patcher.after(DMUserContextMenu, "default", patch));
         }
 
         showVoiceLogModal({userId, channelId, guildId}={}) {
@@ -289,7 +395,7 @@ module.exports = (Plugin, Api) => {
                 const channel = this.getChannel(entry.channelId);
                 const guild = this.getGuild(entry.guildId);
                 if (user === undefined || channel === undefined || guild === undefined) return null;
-                return ce("div", { dangerouslySetInnerHTML:{ __html: Utilities.formatString(this.itemHTML, {
+                return ce("div", { dangerouslySetInnerHTML:{ __html: Utilities.formatString(this.logItemHTML, {
                     user_name: DOMTools.escapeHTML(user.username),
                     user_discrim: user.discriminator,
                     avatar_url: user.getAvatarURL(),
@@ -333,13 +439,9 @@ module.exports = (Plugin, Api) => {
                         case "config.options.name":
                             return "其他選項";
                         case "config.monitoring.guilds.name":
-                            return "檢查伺服器ID ( , 分隔，ID後可加#註解)";
-                        case "config.monitoring.guilds.note":
-                            return "伺服器ID，多組時使用 , 來分隔，ID後可加#註解";
+                            return "監測伺服器清單(使用伺服器右鍵選單增加)";
                         case "config.monitoring.users.name":
-                            return "檢查使用者 ( , 分隔，ID後可加#註解)";
-                        case "config.monitoring.users.note":
-                            return "使用<使用者ID>，多組時使用 , 來分隔，ID後可加#註解";
+                            return "監測使用者清單(使用使用者右鍵選單增加)";
                         case "config.log.name":
                             return "記錄相關選項";
                         case "config.log.logAllUsers.name":
@@ -376,6 +478,8 @@ module.exports = (Plugin, Api) => {
                             return "語音通知紀錄";
                         case "contextmenuVoiceLog":
                             return "語音記錄";
+                        case "contextmenuAddToMonitoring":
+                            return "加入語音監測";
                     }
                 case "en-US":
                 default:
@@ -385,13 +489,9 @@ module.exports = (Plugin, Api) => {
                         case "config.options.name":
                             return "Other Options";
                         case "config.monitoring.guilds.name":
-                            return "Monitoring Guild IDs (seprated with \",\" and append \"#\" after id for commenting)";
-                        case "config.monitoring.guilds.note":
-                            return "Guild IDs (seprated with \",\" and append \"#\" after id for commenting)";
+                            return "Monitoring Guild List (Add with guild context menu)";
                         case "config.monitoring.users.name":
-                            return "Monitoring User IDs (seprated with \",\" and append \"#\" after id for commenting)";
-                        case "config.monitoring.users.note":
-                            return "User IDs (seprated with \",\" and append \"#\" after id for commenting)";
+                            return "Monitoring User List (Add with user context menu)";
                         case "config.log.name":
                             return "Log related";
                         case "config.log.logAllUsers.name":
@@ -428,8 +528,21 @@ module.exports = (Plugin, Api) => {
                             return "Voice Notification Log";
                         case "contextmenuVoiceLog":
                             return "Voice Log";
+                        case "contextmenuAddToMonitoring":
+                            return "Add to Monitoring";
                     }
             }
+        }
+
+        buildSetting(data) {
+            const {name, note, type, itemType, value, onChange, id} = data;
+            let setting = null;
+            if (type === "monitoringList") {
+                setting = new SettingMonitoringList(name, itemType, note, value, onChange)
+                if (id) setting.id = id;
+            }
+            else setting = super.buildSetting(data);
+            return setting;
         }
 
         getSettingsPanel() {

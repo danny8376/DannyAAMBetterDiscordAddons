@@ -25,8 +25,8 @@
             "collapsible": false,
             "shown": true,
             "settings": [
-                {"type": "textbox", "id": "guilds", "name": "i18n:GuildsTitle", "note": "i18n:GuildsNote", "value": "000000000000000000#Example"},
-                {"type": "textbox", "id": "users", "name": "i18n:UsersTitle", "note": "i18n:UsersNote", "value": "000000000000000000#Example,000000000000000000"}
+                {"type": "monitoringList", "itemType": "guild", "id": "guilds", "name": "i18n:GuildsTitle", "note": "", "value": []},
+                {"type": "monitoringList", "itemType": "user", "id": "users", "name": "i18n:UsersTitle", "note": "", "value": []}
             ]
         },
         {
