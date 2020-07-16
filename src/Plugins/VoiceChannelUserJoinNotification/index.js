@@ -2,11 +2,24 @@
 module.exports = (Plugin, Api) => {
     const {Patcher, DiscordContextMenu, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
 
+    const DC = {};
+    [
+        "getVoiceStates",
+        "getUser",
+        "getChannel",
+        "getGuild",
+        "getGuilds",
+        "getCurrentUser",
+        "getStatus",
+        "transitionToGuild",
+        "getLocaleInfo"
+    ].forEach(funcName => {
+         DC[funcName] = ZeresPluginLibrary.WebpackModules.getByProps(funcName)[funcName];
+    });
+
     class SettingMonitoringList extends Api.Settings.SettingField {
         constructor(name, itemType, note, value, onChange, options = {}) {
             let itemListHTML, itemHTML;
-            const getGuild = ZeresPluginLibrary.WebpackModules.getByProps("getGuild")["getGuild"];
-            const getUser = ZeresPluginLibrary.WebpackModules.getByProps("getUser")["getUser"];
             const containerHTML = require("settings_container.html").trim()
             const container = DOMTools.createElement(containerHTML);
 
@@ -18,7 +31,7 @@ module.exports = (Plugin, Api) => {
                 case "guild":
                     itemHTML = require(`settings_item_guild.html`).trim();
                     value.forEach(item => {
-                        const guild = getGuild(item);
+                        const guild = DC.getGuild(item);
                         const dom = DOMTools.createElement(guild ? Utilities.formatString(itemHTML, {
                     		guild_icon: guild.getIconURL(),
                     		guild_name: DOMTools.escapeHTML(guild.name),
@@ -37,7 +50,7 @@ module.exports = (Plugin, Api) => {
                 case "user":
                     itemHTML = require("settings_item_user.html").trim();
                     value.forEach(item => {
-                        const user = getUser(item);
+                        const user = DC.getUser(item);
                         const dom = DOMTools.createElement(user ? Utilities.formatString(itemHTML, {
                     		user_name: DOMTools.escapeHTML(user.username),
                     		user_discrim: user.discriminator,
@@ -70,15 +83,8 @@ module.exports = (Plugin, Api) => {
             this.logItemHTML = require("log_item.html").trim();
         }
 
-        expandDCFuncs() {
-            const funcs = ["getVoiceStates", "getUser", "getChannel", "getGuild", "getGuilds", "getCurrentUser", "getStatus", "transitionToGuild", "getLocaleInfo"];
-            funcs.forEach(funcName => {
-                 this[funcName] = ZeresPluginLibrary.WebpackModules.getByProps(funcName)[funcName];
-            });
-        }
-
         checkPatchI18n() {
-            const sysLocale = this.getLocaleInfo().code;
+            const sysLocale = DC.getLocaleInfo().code;
             if (this.currentLocale !== sysLocale) {
                 this.currentLocale = sysLocale;
 
@@ -110,13 +116,12 @@ module.exports = (Plugin, Api) => {
 
         async onStart() {
             await new Promise(resolve => setTimeout(resolve, 1000));
-            this.expandDCFuncs();
             this.checkPatchI18n();
 
             this.log = [];
             this.lastStates = {};
 
-            const localUser = this.getCurrentUser();
+            const localUser = DC.getCurrentUser();
 
             this.migrateOldMonitoringList();
             this.parseSettings();
@@ -140,14 +145,14 @@ module.exports = (Plugin, Api) => {
                 const allGuilds = [];
                 this.afkChannels = [];
             
-                Object.values(this.getGuilds()).forEach(g => {
+                Object.values(DC.getGuilds()).forEach(g => {
                     allGuilds.push(g.id);
                     if (g.afkChannelId) this.afkChannels.push(g.afkChannelId);
                 });
             
                 const targetGuilds = this.settings.allGuilds ? allGuilds : this.settings.monitoring.guilds;
             
-                const newStates = targetGuilds.map(gid => this.getVoiceStates(gid)).reduce((a, v) => {return {...v, ...a}});
+                const newStates = targetGuilds.map(gid => DC.getVoiceStates(gid)).reduce((a, v) => {return {...v, ...a}});
 
                 for(let id in newStates) {
                     let noNotify = false;
@@ -159,9 +164,9 @@ module.exports = (Plugin, Api) => {
                     }
 
                     if(this.lastStates[id] === undefined) {
-                        const user = this.getUser(id), channel = this.getChannel(newStates[id].channelId);
+                        const user = DC.getUser(id), channel = DC.getChannel(newStates[id].channelId);
                         if(user && channel) {
-                            const guild = this.getGuild(channel.guild_id);
+                            const guild = DC.getGuild(channel.guild_id);
                             this.notificationAndLog({act: "Join", user, channel, guild}, noNotify);
                             logChanged = true;
                         }
@@ -169,11 +174,11 @@ module.exports = (Plugin, Api) => {
 
                         if(this.lastStates[id].channelId !== newStates[id].channelId) {
 
-                            const user = this.getUser(id), channel = this.getChannel(newStates[id].channelId);
-                            const lastChannel = this.getChannel(this.lastStates[id].channelId);
+                            const user = DC.getUser(id), channel = DC.getChannel(newStates[id].channelId);
+                            const lastChannel = DC.getChannel(this.lastStates[id].channelId);
 
                             if(user && channel) {
-                                const guild = this.getGuild(channel.guild_id);
+                                const guild = DC.getGuild(channel.guild_id);
                                 this.notificationAndLog({act: "Move", user, channel, lastChannel, guild}, noNotify);
                                 logChanged = true;
                             }
@@ -196,9 +201,9 @@ module.exports = (Plugin, Api) => {
                     }
 
                     if(newStates[id] === undefined && id !== localUser.id) {
-                        const user = this.getUser(id), channel = this.getChannel(this.lastStates[id].channelId);
+                        const user = DC.getUser(id), channel = DC.getChannel(this.lastStates[id].channelId);
                         if(user && channel) {
-                            const guild = this.getGuild(channel.guild_id);
+                            const guild = DC.getGuild(channel.guild_id);
                             this.notificationAndLog({act: "Leave", user, channel, guild}, noNotify);
                             logChanged = true;
                         }
@@ -244,7 +249,7 @@ module.exports = (Plugin, Api) => {
         }
 
         getLocalStatus() {
-            return this.getStatus(this.getCurrentUser().id);
+            return DC.getStatus(DC.getCurrentUser().id);
         }
 
         migrateOldMonitoringList() {
@@ -429,9 +434,9 @@ module.exports = (Plugin, Api) => {
             const ce = DiscordModules.React.createElement;
             const AuditLog = DiscordClasses.AuditLog;
             const children = log.map(entry => {
-                const user = this.getUser(entry.userId);
-                const channel = this.getChannel(entry.channelId);
-                const guild = this.getGuild(entry.guildId);
+                const user = DC.getUser(entry.userId);
+                const channel = DC.getChannel(entry.channelId);
+                const guild = DC.getGuild(entry.guildId);
                 if (user === undefined || channel === undefined || guild === undefined) return null;
                 return ce("div", { dangerouslySetInnerHTML:{ __html: Utilities.formatString(this.logItemHTML, {
                     user_name: DOMTools.escapeHTML(user.username),
@@ -462,14 +467,14 @@ module.exports = (Plugin, Api) => {
                 const notification = new Notification(this.getLocaleText(`notification${act}Message`, {user: user.username, channel: channel.name, guild: guild.name}), {silent: this.settings.options.silentNotification, icon: user.getAvatarURL()});
                 if (act === "Join" || act === "Move") {
                     notification.addEventListener("click", () => {
-                        this.transitionToGuild(guild.id);
+                        DC.transitionToGuild(guild.id);
                     });
                 }
             }
         }
 
         getLocaleText(id, args) {
-            switch (this.getLocaleInfo().code) {
+            switch (DC.getLocaleInfo().code) {
                 case "zh-TW":
                     switch (id) {
                         case "config.monitoring.name":
