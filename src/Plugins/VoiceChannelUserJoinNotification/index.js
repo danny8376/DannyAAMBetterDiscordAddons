@@ -2,7 +2,51 @@
 module.exports = (Plugin, Api) => {
     const {Patcher, DiscordContextMenu, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
 
-    const DC = {};
+    const DC = {
+        cache: {
+            users: {},
+            channels: {},
+            guilds: {}
+        },
+        getLocalStatus() {
+            return this.getStatus(this.getCurrentUser().id);
+        },
+        getCachedDCData(rawFunc, cacheName, id, dataPatch) {
+            const raw = this[rawFunc](id);
+            if (raw) {
+                if (dataPatch) dataPatch(raw);
+                this.cache[cacheName][id] = raw;
+                return raw;
+            } else {
+                const cache = this.cache[cacheName][id];
+                if (cache && dataPatch) dataPatch(cache);
+                return cache;
+            }
+        },
+        getCachedUser(id) {
+            return this.getCachedDCData("getUser", "users", id, raw => {
+                if (raw.getAvatarURL) {
+                    if (raw.cachedAvatarURL === undefined) {
+                        raw.cachedAvatarURL = raw.getAvatarURL();
+                    }
+                } else {
+                    raw.getAvatarURL = () => raw.cachedAvatarURL;
+                }
+            });
+        },
+        getCachedChannel(id) {
+            return this.getCachedDCData("getChannel", "channels", id);
+        },
+        getCachedGuild(id) {
+            return this.getCachedDCData("getGuild", "guilds", id, raw => {
+                if (raw.getIconURL) {
+                    raw.cachedIconURL = raw.getIconURL();
+                } else {
+                    raw.getIconURL = () => raw.cachedIconURL;
+                }
+            });
+        }
+    };
     [
         "getVoiceStates",
         "getUser",
@@ -26,16 +70,15 @@ module.exports = (Plugin, Api) => {
             super(name, note, onChange, container);
 
             const list = container.querySelector(".VCUJNSettingsItemList");
-            const itemFailedHTML = require("settings_item_failed.html").trim();
             switch (itemType) {
                 case "guild":
                     itemHTML = require(`settings_item_guild.html`).trim();
                     value.forEach(item => {
-                        const guild = DC.getGuild(item);
-                        const dom = DOMTools.createElement(guild ? Utilities.formatString(itemHTML, {
+                        const guild = DC.getCachedGuild(item);
+                        const dom = DOMTools.createElement(Utilities.formatString(itemHTML, {
                     		guild_icon: guild.getIconURL(),
                     		guild_name: DOMTools.escapeHTML(guild.name),
-                        }) : Utilities.formatString(itemFailedHTML, { id: item }));
+                        }));
                         dom.querySelector(".VCUJNRemove").addEventListener("click", () => {
                             const idx = value.indexOf(item);
                             if (idx !== -1) {
@@ -50,12 +93,12 @@ module.exports = (Plugin, Api) => {
                 case "user":
                     itemHTML = require("settings_item_user.html").trim();
                     value.forEach(item => {
-                        const user = DC.getUser(item);
-                        const dom = DOMTools.createElement(user ? Utilities.formatString(itemHTML, {
+                        const user = DC.getCachedUser(item);
+                        const dom = DOMTools.createElement(Utilities.formatString(itemHTML, {
                     		user_name: DOMTools.escapeHTML(user.username),
                     		user_discrim: user.discriminator,
                     		avatar_url: user.getAvatarURL(),
-                        }) : Utilities.formatString(itemFailedHTML, { id: item }));
+                        }));
                         dom.querySelector(".VCUJNRemove").addEventListener("click", () => {
                             const idx = value.indexOf(item);
                             if (idx !== -1) {
@@ -164,9 +207,9 @@ module.exports = (Plugin, Api) => {
                     }
 
                     if(this.lastStates[id] === undefined) {
-                        const user = DC.getUser(id), channel = DC.getChannel(newStates[id].channelId);
+                        const user = DC.getCachedUser(id), channel = DC.getCachedChannel(newStates[id].channelId);
                         if(user && channel) {
-                            const guild = DC.getGuild(channel.guild_id);
+                            const guild = DC.getCachedGuild(channel.guild_id);
                             this.notificationAndLog({act: "Join", user, channel, guild}, noNotify);
                             logChanged = true;
                         }
@@ -174,11 +217,11 @@ module.exports = (Plugin, Api) => {
 
                         if(this.lastStates[id].channelId !== newStates[id].channelId) {
 
-                            const user = DC.getUser(id), channel = DC.getChannel(newStates[id].channelId);
-                            const lastChannel = DC.getChannel(this.lastStates[id].channelId);
+                            const user = DC.getCachedUser(id), channel = DC.getCachedChannel(newStates[id].channelId);
+                            const lastChannel = DC.getCachedChannel(this.lastStates[id].channelId);
 
                             if(user && channel) {
-                                const guild = DC.getGuild(channel.guild_id);
+                                const guild = DC.getCachedGuild(channel.guild_id);
                                 this.notificationAndLog({act: "Move", user, channel, lastChannel, guild}, noNotify);
                                 logChanged = true;
                             }
@@ -201,9 +244,9 @@ module.exports = (Plugin, Api) => {
                     }
 
                     if(newStates[id] === undefined && id !== localUser.id) {
-                        const user = DC.getUser(id), channel = DC.getChannel(this.lastStates[id].channelId);
+                        const user = DC.getCachedUser(id), channel = DC.getCachedChannel(this.lastStates[id].channelId);
                         if(user && channel) {
-                            const guild = DC.getGuild(channel.guild_id);
+                            const guild = DC.getCachedGuild(channel.guild_id);
                             this.notificationAndLog({act: "Leave", user, channel, guild}, noNotify);
                             logChanged = true;
                         }
@@ -245,11 +288,10 @@ module.exports = (Plugin, Api) => {
             window.removeEventListener("blur", this.unfocus);
             document.removeEventListener("keydown", this.onKeyDown);
             this.unpatchContextMenus();
+            if(this.settings.log.persistLog) {
+                this.savePersistLog();
+            }
             this.saveSettings();
-        }
-
-        getLocalStatus() {
-            return DC.getStatus(DC.getCurrentUser().id);
         }
 
         migrateOldMonitoringList() {
@@ -278,16 +320,19 @@ module.exports = (Plugin, Api) => {
         }
 
         loadPersistLog() {
-            const {lastStates, log} = PluginUtilities.loadData(this.getName() + 'Data', 'data', {
+            const {DCDataCache, lastStates, log} = PluginUtilities.loadData(this.getName() + 'Data', 'data', {
+                DCDataCache: DC.cache,
                 lastStates: {},
                 log: []
             });
+            DC.cache = DCDataCache;
             this.lastStates = lastStates;
             this.log = log;
         }
 
         savePersistLog() {
             PluginUtilities.saveData(this.getName() + 'Data', 'data', {
+                DCDataCache: DC.cache,
                 lastStates: this.lastStates,
                 log: this.log
             });
@@ -434,9 +479,9 @@ module.exports = (Plugin, Api) => {
             const ce = DiscordModules.React.createElement;
             const AuditLog = DiscordClasses.AuditLog;
             const children = log.map(entry => {
-                const user = DC.getUser(entry.userId);
-                const channel = DC.getChannel(entry.channelId);
-                const guild = DC.getGuild(entry.guildId);
+                const user = DC.getCachedUser(entry.userId);
+                const channel = DC.getCachedChannel(entry.channelId);
+                const guild = DC.getCachedGuild(entry.guildId);
                 if (user === undefined || channel === undefined || guild === undefined) return null;
                 return ce("div", { dangerouslySetInnerHTML:{ __html: Utilities.formatString(this.logItemHTML, {
                     user_name: DOMTools.escapeHTML(user.username),
