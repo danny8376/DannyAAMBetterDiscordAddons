@@ -6,7 +6,24 @@ module.exports = (Plugin, Api) => {
         cache: {
             users: {},
             channels: {},
-            guilds: {}
+            guilds: {},
+            clear(list) {
+                if (list) {
+                    for (const id in this.users) {
+                        if (!list.users.has(id)) delete this.users[id];
+                    }
+                    for (const id in this.channels) {
+                        if (!list.channels.has(id)) delete this.channels[id];
+                    }
+                    for (const id in this.guilds) {
+                        if (!list.guilds.has(id)) delete this.guilds[id];
+                    }
+                } else {
+                    this.users = {};
+                    this.channels = {};
+                    this.guilds = {};
+                }
+            }
         },
         getLocalStatus() {
             return this.getStatus(this.getCurrentUser().id);
@@ -331,11 +348,33 @@ module.exports = (Plugin, Api) => {
         }
 
         savePersistLog() {
+            DC.cache.clear(this.getCacheKeepList());
             PluginUtilities.saveData(this.getName() + 'Data', 'data', {
                 DCDataCache: DC.cache,
                 lastStates: this.lastStates,
                 log: this.log
             });
+        }
+
+        getCacheKeepList() {
+            const list = {
+                users: new Set(),
+                channels: new Set(),
+                guilds: new Set()
+            };
+            this.settings.monitoring.users.forEach(u => {
+                if (!list.users.has(u)) list.users.add(u);
+            });
+            this.settings.monitoring.guilds.forEach(g => {
+                if (!list.guilds.has(g)) list.guilds.add(g);
+            });
+            this.log.forEach(l => {
+                if (!list.users.has(l.userId)) list.users.add(l.userId);
+                if (!list.channels.has(l.channelId)) list.channels.add(l.channelId);
+                if (!list.channels.has(l.lastChannelId)) list.channels.add(l.lastChannelId);
+                if (!list.guilds.has(l.guildId)) list.guilds.add(l.guildId);
+            });
+            return list;
         }
 
         addMonitoringList(type, id) {
@@ -506,10 +545,24 @@ module.exports = (Plugin, Api) => {
 
         notificationAndLog({act, user, channel, lastChannel, guild}, noNotify) {
             const lastChannelId = lastChannel === undefined ? null : lastChannel.id;
-            this.pushLog({userId: user.id, channelId: channel.id, lastChannelId, guildId: guild.id, timestamp: new Date().getTime(), act});
+            this.pushLog({
+                userId: user.id,
+                channelId: channel.id,
+                lastChannelId,
+                guildId: guild.id,
+                timestamp: new Date().getTime(),
+                act
+            });
             if(!noNotify && !(this.settings.options.suppressInDnd && this.getLocalStatus() == "dnd") && !this.afkChannels.includes(channel.id) && (act !== "Leave" || this.settings.options.notifyLeave)) {
                 this.checkPatchI18n();
-                const notification = new Notification(this.getLocaleText(`notification${act}Message`, {user: user.username, channel: channel.name, guild: guild.name}), {silent: this.settings.options.silentNotification, icon: user.getAvatarURL()});
+                const notification = new Notification(this.getLocaleText(`notification${act}Message`, {
+                    user: user.username,
+                    channel: channel.name,
+                    guild: guild.name
+                }), {
+                    silent: this.settings.options.silentNotification,
+                    icon: user.getAvatarURL()
+                });
                 if (act === "Join" || act === "Move") {
                     notification.addEventListener("click", () => {
                         DC.transitionToGuild(guild.id);
