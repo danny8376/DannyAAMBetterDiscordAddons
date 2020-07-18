@@ -664,7 +664,7 @@ module.exports = (() => {
                 timestamp: new Date().getTime(),
                 act
             });
-            if(!noNotify && !(this.settings.options.suppressInDnd && this.getLocalStatus() == "dnd") && !this.afkChannels.includes(channel.id) && (act !== "Leave" || this.settings.options.notifyLeave)) {
+            if(!noNotify && !(this.settings.options.suppressInDnd && DC.getLocalStatus() == "dnd") && !this.afkChannels.includes(channel.id) && (act !== "Leave" || this.settings.options.notifyLeave)) {
                 this.checkPatchI18n();
                 const notification = new Notification(this.getLocaleText(`notification${act}Message`, {
                     user: user.username,
