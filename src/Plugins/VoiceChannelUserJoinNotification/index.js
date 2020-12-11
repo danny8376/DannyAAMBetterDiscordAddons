@@ -210,7 +210,7 @@ module.exports = (Plugin, Api) => {
                     if (g.afkChannelId) this.afkChannels.push(g.afkChannelId);
                 });
             
-                const targetGuilds = this.settings.allGuilds ? allGuilds : this.settings.monitoring.guilds;
+                const targetGuilds = this.settings.options.allGuilds ? allGuilds : this.settings.monitoring.guilds;
             
                 const newStates = targetGuilds.map(gid => DC.getVoiceStates(gid)).reduce((a, v) => {return {...v, ...a}});
 
