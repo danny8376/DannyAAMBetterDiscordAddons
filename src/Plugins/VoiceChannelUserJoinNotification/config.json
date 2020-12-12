@@ -37,6 +37,7 @@
             "shown": true,
             "settings": [
                 {"type": "switch", "id": "logAllUsers", "name": "i18n:LogAllUsers", "note": "", "value": false},
+                {"type": "switch", "id": "logInvisible", "name": "i18n:LogInvisible", "note": "", "value": false},
                 {"type": "switch", "id": "persistLog", "name": "i18n:PersistLog", "note": "", "value": false},
                 {"type": "textbox", "id": "maxLogEntries", "name": "i18n:MaxLogEntries", "note": "", "value": "250"}
             ]
@@ -49,6 +50,7 @@
             "shown": true,
             "settings": [
                 {"type": "switch", "id": "allGuilds", "name": "i18n:AllGuilds", "note": "", "value": false},
+                {"type": "switch", "id": "notifyInvisible", "name": "i18n:NotifyInvisible", "note": "", "value": false},
                 {"type": "switch", "id": "notifyLeave", "name": "i18n:NotifyLeave", "note": "", "value": false},
                 {"type": "switch", "id": "silentNotification", "name": "i18n:SilentNotification", "note": "", "value": false},
                 {"type": "switch", "id": "suppressInDnd", "name": "i18n:SuppressInDnd", "note": "", "value": true},

@@ -29,7 +29,7 @@
 @else@*/
 
 module.exports = (() => {
-    const config = {info:{name:"VoiceChannelUserJoinNotification",authors:[{name:"DannyAAM",discord_id:"275978619354873856",github_username:"danny8376",twitter_username:"DannyAAMtw"}],version:"0.1.4",description:"A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",github:"https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",github_raw:"https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"},changelog:[{title:"All Guilds Monitoring is back",type:"fixed",items:["All guilds monitoring is fixed. It should be able to monitoring all guilds instead of list."]},{title:"Thanks",type:"progress",items:["This plugins is originaly modified from VoiceChatNotifications by Metalloriff (https://github.com/Metalloriff/BetterDiscordPlugins/blob/a056291d1498deb721908cce45cff5625c7a7f1e/VoiceChatNotifications.plugin.js). Learned from his plugins how to implement this plugin. Thanks for him."]}],main:"index.js",defaultConfig:[{type:"category",id:"monitoring",name:"i18n:MonitoringTitle",collapsible:false,shown:true,settings:[{type:"monitoringList",itemType:"guild",id:"guilds",name:"i18n:GuildsTitle",note:"",value:[]},{type:"monitoringList",itemType:"user",id:"users",name:"i18n:UsersTitle",note:"",value:[]}]},{type:"category",id:"log",name:"i18n:LogTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"logAllUsers",name:"i18n:LogAllUsers",note:"",value:false},{type:"switch",id:"persistLog",name:"i18n:PersistLog",note:"",value:false},{type:"textbox",id:"maxLogEntries",name:"i18n:MaxLogEntries",note:"",value:"250"}]},{type:"category",id:"options",name:"i18n:OptionsTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"allGuilds",name:"i18n:AllGuilds",note:"",value:false},{type:"switch",id:"notifyLeave",name:"i18n:NotifyLeave",note:"",value:false},{type:"switch",id:"silentNotification",name:"i18n:SilentNotification",note:"",value:false},{type:"switch",id:"suppressInDnd",name:"i18n:SuppressInDnd",note:"",value:true},{type:"switch",id:"logHotkey",name:"i18n:LogHotkey",note:"",value:true}]}]};
+    const config = {info:{name:"VoiceChannelUserJoinNotification",authors:[{name:"DannyAAM",discord_id:"275978619354873856",github_username:"danny8376",twitter_username:"DannyAAMtw"}],version:"0.1.4",description:"A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",github:"https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",github_raw:"https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"},changelog:[{title:"All Guilds Monitoring is back",type:"fixed",items:["All guilds monitoring is fixed. It should be able to monitoring all guilds instead of list."]},{title:"Thanks",type:"progress",items:["This plugins is originaly modified from VoiceChatNotifications by Metalloriff (https://github.com/Metalloriff/BetterDiscordPlugins/blob/a056291d1498deb721908cce45cff5625c7a7f1e/VoiceChatNotifications.plugin.js). Learned from his plugins how to implement this plugin. Thanks for him."]}],main:"index.js",defaultConfig:[{type:"category",id:"monitoring",name:"i18n:MonitoringTitle",collapsible:false,shown:true,settings:[{type:"monitoringList",itemType:"guild",id:"guilds",name:"i18n:GuildsTitle",note:"",value:[]},{type:"monitoringList",itemType:"user",id:"users",name:"i18n:UsersTitle",note:"",value:[]}]},{type:"category",id:"log",name:"i18n:LogTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"logAllUsers",name:"i18n:LogAllUsers",note:"",value:false},{type:"switch",id:"logInvisible",name:"i18n:LogInvisible",note:"",value:false},{type:"switch",id:"persistLog",name:"i18n:PersistLog",note:"",value:false},{type:"textbox",id:"maxLogEntries",name:"i18n:MaxLogEntries",note:"",value:"250"}]},{type:"category",id:"options",name:"i18n:OptionsTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"allGuilds",name:"i18n:AllGuilds",note:"",value:false},{type:"switch",id:"notifyInvisible",name:"i18n:NotifyInvisible",note:"",value:false},{type:"switch",id:"notifyLeave",name:"i18n:NotifyLeave",note:"",value:false},{type:"switch",id:"silentNotification",name:"i18n:SilentNotification",note:"",value:false},{type:"switch",id:"suppressInDnd",name:"i18n:SuppressInDnd",note:"",value:true},{type:"switch",id:"logHotkey",name:"i18n:LogHotkey",note:"",value:true}]}]};
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
@@ -125,10 +125,11 @@ module.exports = (() => {
         "getGuilds",
         "getCurrentUser",
         "getStatus",
+        "can",
         "transitionToGuild",
         "getLocaleInfo"
     ].forEach(funcName => {
-         DC[funcName] = ZeresPluginLibrary.WebpackModules.getByProps(funcName)[funcName];
+         DC[funcName] = WebpackModules.getByProps(funcName)[funcName];
     });
 
     class SettingMonitoringList extends Api.Settings.SettingField {
@@ -647,7 +648,11 @@ module.exports = (() => {
             Modals.showModal(this.getLocaleText("modalLogTitle"), children, {cancelText: null});
         }
 
-        pushLog(logEntry){
+        checkChannelVisibility(channel) {
+            return DC.can(DiscordModules.DiscordConstants.Permissions["VIEW_CHANNEL"], channel);
+        }
+
+        pushLog(logEntry) {
             this.log.unshift(logEntry);
             if (this.log.length > this.maxLogEntries) {
                 this.log.pop();
@@ -656,7 +661,7 @@ module.exports = (() => {
 
         notificationAndLog({act, user, channel, lastChannel, guild}, noNotify) {
             const lastChannelId = lastChannel === undefined ? null : lastChannel.id;
-            this.pushLog({
+            if (this.settings.log.logInvisible || this.checkChannelVisibility(channel)) this.pushLog({
                 userId: user.id,
                 channelId: channel.id,
                 lastChannelId,
@@ -664,7 +669,7 @@ module.exports = (() => {
                 timestamp: new Date().getTime(),
                 act
             });
-            if(!noNotify && !(this.settings.options.suppressInDnd && DC.getLocalStatus() == "dnd") && !this.afkChannels.includes(channel.id) && (act !== "Leave" || this.settings.options.notifyLeave)) {
+            if(!noNotify && !(this.settings.options.suppressInDnd && DC.getLocalStatus() == "dnd") && !this.afkChannels.includes(channel.id) && (act !== "Leave" || this.settings.options.notifyLeave) && (this.settings.options.notifyInvisible || this.checkChannelVisibility(channel))) {
                 this.checkPatchI18n();
                 const notification = new Notification(this.getLocaleText(`notification${act}Message`, {
                     user: user.username,
@@ -698,12 +703,16 @@ module.exports = (() => {
                             return "記錄相關選項";
                         case "config.log.logAllUsers.name":
                             return "記錄所有使用者";
+                        case "config.log.logInvisible.name":
+                            return "記錄隱藏頻道";
                         case "config.log.persistLog.name":
                             return "儲存紀錄";
                         case "config.log.maxLogEntries.name":
                             return "最大紀錄數量";
                         case "config.options.allGuilds.name":
                             return "檢查所有已加入伺服器";
+                        case "config.options.notifyInvisible.name":
+                            return "通知隱藏頻道";
                         case "config.options.notifyLeave.name":
                             return "通知退出語音頻道";
                         case "config.options.silentNotification.name":
@@ -750,12 +759,16 @@ module.exports = (() => {
                             return "Log related";
                         case "config.log.logAllUsers.name":
                             return "Log all user actions";
+                        case "config.log.logInvisible.name":
+                            return "Log invisible channels";
                         case "config.log.persistLog.name":
                             return "Persist log";
                         case "config.log.maxLogEntries.name":
                             return "Max log entries counts";
                         case "config.options.allGuilds.name":
                             return "Monitor all guilds";
+                        case "config.options.notifyInvisible.name":
+                            return "Notify for invisible channels";
                         case "config.options.notifyLeave.name":
                             return "Notify user leaves";
                         case "config.options.silentNotification.name":

@@ -72,10 +72,11 @@ module.exports = (Plugin, Api) => {
         "getGuilds",
         "getCurrentUser",
         "getStatus",
+        "can",
         "transitionToGuild",
         "getLocaleInfo"
     ].forEach(funcName => {
-         DC[funcName] = ZeresPluginLibrary.WebpackModules.getByProps(funcName)[funcName];
+         DC[funcName] = WebpackModules.getByProps(funcName)[funcName];
     });
 
     class SettingMonitoringList extends Api.Settings.SettingField {
@@ -536,7 +537,11 @@ module.exports = (Plugin, Api) => {
             Modals.showModal(this.getLocaleText("modalLogTitle"), children, {cancelText: null});
         }
 
-        pushLog(logEntry){
+        checkChannelVisibility(channel) {
+            return DC.can(DiscordModules.DiscordConstants.Permissions["VIEW_CHANNEL"], channel);
+        }
+
+        pushLog(logEntry) {
             this.log.unshift(logEntry);
             if (this.log.length > this.maxLogEntries) {
                 this.log.pop();
@@ -545,7 +550,7 @@ module.exports = (Plugin, Api) => {
 
         notificationAndLog({act, user, channel, lastChannel, guild}, noNotify) {
             const lastChannelId = lastChannel === undefined ? null : lastChannel.id;
-            this.pushLog({
+            if (this.settings.log.logInvisible || this.checkChannelVisibility(channel)) this.pushLog({
                 userId: user.id,
                 channelId: channel.id,
                 lastChannelId,
@@ -553,7 +558,7 @@ module.exports = (Plugin, Api) => {
                 timestamp: new Date().getTime(),
                 act
             });
-            if(!noNotify && !(this.settings.options.suppressInDnd && DC.getLocalStatus() == "dnd") && !this.afkChannels.includes(channel.id) && (act !== "Leave" || this.settings.options.notifyLeave)) {
+            if(!noNotify && !(this.settings.options.suppressInDnd && DC.getLocalStatus() == "dnd") && !this.afkChannels.includes(channel.id) && (act !== "Leave" || this.settings.options.notifyLeave) && (this.settings.options.notifyInvisible || this.checkChannelVisibility(channel))) {
                 this.checkPatchI18n();
                 const notification = new Notification(this.getLocaleText(`notification${act}Message`, {
                     user: user.username,
@@ -587,12 +592,16 @@ module.exports = (Plugin, Api) => {
                             return "記錄相關選項";
                         case "config.log.logAllUsers.name":
                             return "記錄所有使用者";
+                        case "config.log.logInvisible.name":
+                            return "記錄隱藏頻道";
                         case "config.log.persistLog.name":
                             return "儲存紀錄";
                         case "config.log.maxLogEntries.name":
                             return "最大紀錄數量";
                         case "config.options.allGuilds.name":
                             return "檢查所有已加入伺服器";
+                        case "config.options.notifyInvisible.name":
+                            return "通知隱藏頻道";
                         case "config.options.notifyLeave.name":
                             return "通知退出語音頻道";
                         case "config.options.silentNotification.name":
@@ -639,12 +648,16 @@ module.exports = (Plugin, Api) => {
                             return "Log related";
                         case "config.log.logAllUsers.name":
                             return "Log all user actions";
+                        case "config.log.logInvisible.name":
+                            return "Log invisible channels";
                         case "config.log.persistLog.name":
                             return "Persist log";
                         case "config.log.maxLogEntries.name":
                             return "Max log entries counts";
                         case "config.options.allGuilds.name":
                             return "Monitor all guilds";
+                        case "config.options.notifyInvisible.name":
+                            return "Notify for invisible channels";
                         case "config.options.notifyLeave.name":
                             return "Notify user leaves";
                         case "config.options.silentNotification.name":
