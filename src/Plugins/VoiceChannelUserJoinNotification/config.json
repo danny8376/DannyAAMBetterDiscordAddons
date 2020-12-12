@@ -7,13 +7,13 @@
             "github_username": "danny8376",
             "twitter_username": "DannyAAMtw"
         }],
-        "version": "0.1.4",
+        "version": "0.1.5",
         "description": "A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",
         "github": "https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",
         "github_raw": "https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"
     },
     "changelog": [
-        {"title": "All Guilds Monitoring is back", "type": "fixed", "items": ["All guilds monitoring is fixed. It should be able to monitoring all guilds instead of list."]},
+        {"title": "Ability to filter invisible channels", "items": ["You're able to filter out invisible channels now.(not well tested though.)"]},
         {"title": "Thanks", "type": "progress", "items": ["This plugins is originaly modified from VoiceChatNotifications by Metalloriff (https://github.com/Metalloriff/BetterDiscordPlugins/blob/a056291d1498deb721908cce45cff5625c7a7f1e/VoiceChatNotifications.plugin.js). Learned from his plugins how to implement this plugin. Thanks for him."]}
     ],
     "main": "index.js",
