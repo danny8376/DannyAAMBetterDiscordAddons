@@ -25,44 +25,83 @@ module.exports = (Plugin, Api) => {
                 }
             }
         },
+        data4JSON() {
+            const dump = {
+                users: this.cache.users,
+                channels: {},
+                guilds: {}
+            }
+            for (const id in this.cache.channels) {
+                dump.channels[id] = Object.assign({}, this.cache.channels[id]);
+                delete dump.channels[id].permissionOverwrites;
+            }
+            for (const id in this.cache.guilds) {
+                dump.guilds[id] = Object.assign({}, this.cache.guilds[id]);
+                delete dump.guilds[id].roles;
+            }
+            return dump;
+        },
         getLocalStatus() {
             return this.getStatus(this.getCurrentUser().id);
         },
-        getCachedDCData(rawFunc, cacheName, id, dataPatch) {
+        getCachedDCData(rawFunc, cacheName, id, {prePatch, postPatch}) {
             const raw = this[rawFunc](id);
             if (raw) {
-                if (dataPatch) dataPatch(raw);
+                if (prePatch) prePatch(raw);
                 this.cache[cacheName][id] = raw;
                 return raw;
             } else {
                 const cache = this.cache[cacheName][id];
-                if (cache && dataPatch) dataPatch(cache);
+                if (cache && postPatch) postPatch(cache);
                 return cache;
             }
         },
         getCachedUser(id) {
-            return this.getCachedDCData("getUser", "users", id, raw => {
-                if (raw.getAvatarURL) {
-                    if (raw.cachedAvatarURL === undefined) {
+            return this.getCachedDCData("getUser", "users", id, {
+                prePatch(raw) {
+                    if (raw.getAvatarURL && raw.cachedAvatarURL === undefined) {
                         raw.cachedAvatarURL = raw.getAvatarURL();
                     }
-                } else {
-                    raw.getAvatarURL = () => raw.cachedAvatarURL;
+                },
+                postPatch(cache) {
+                    if (!cache.getAvatarURL) {
+                        cache.getAvatarURL = () => cache.cachedAvatarURL;
+                    }
                 }
             });
         },
         getCachedChannel(id) {
-            return this.getCachedDCData("getChannel", "channels", id);
-        },
-        getCachedGuild(id) {
-            return this.getCachedDCData("getGuild", "guilds", id, raw => {
-                if (raw.getIconURL) {
-                    raw.cachedIconURL = raw.getIconURL();
-                } else {
-                    raw.getIconURL = () => raw.cachedIconURL;
+            return this.getCachedDCData("getChannel", "channels", id, {
+                postPatch(cache) {
+                    cache.permissionOverwrites = this.channelPermsProxy;
                 }
             });
-        }
+        },
+        getCachedGuild(id) {
+            return this.getCachedDCData("getGuild", "guilds", id, {
+                prePatch(raw) {
+                    if (raw.getIconURL && raw.cachedIconURL === undefined) {
+                        raw.cachedIconURL = raw.getIconURL();
+                    }
+                },
+                postPatch(cache) {
+                    if (!cache.getIconURL) {
+                        cache.getIconURL = () => cache.cachedIconURL;
+                        cache.roles = this.guildRolesProxy;
+                    }
+                }
+            });
+        },
+        channelPermsProxy: new Proxy({}, {
+            get(target, name) {
+                return this.getChannel(target.id).permissionOverwrites[name];
+            }
+        }),
+        guildRolesProxy: new Proxy({}, {
+            get(target, name) {
+                return this.getGuild(target.id).roles[name];
+            }
+        })
     };
     [
         "getVoiceStates",
@@ -178,6 +217,8 @@ module.exports = (Plugin, Api) => {
         async onStart() {
             await new Promise(resolve => setTimeout(resolve, 1000));
             this.checkPatchI18n();
+
+            this.DC = DC; // for easy debugging :-P
 
             this.log = [];
             this.lastStates = {};
@@ -351,7 +392,7 @@ module.exports = (Plugin, Api) => {
         savePersistLog() {
             DC.cache.clear(this.getCacheKeepList());
             PluginUtilities.saveData(this.getName() + 'Data', 'data', {
-                DCDataCache: DC.cache,
+                DCDataCache: DC.data4JSON(),
                 lastStates: this.lastStates,
                 log: this.log
             });
