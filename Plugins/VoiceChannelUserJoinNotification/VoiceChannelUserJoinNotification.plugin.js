@@ -29,7 +29,7 @@
 @else@*/
 
 module.exports = (() => {
-    const config = {info:{name:"VoiceChannelUserJoinNotification",authors:[{name:"DannyAAM",discord_id:"275978619354873856",github_username:"danny8376",twitter_username:"DannyAAMtw"}],version:"0.1.5",description:"A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",github:"https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",github_raw:"https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"},changelog:[{title:"Ability to filter invisible channels",items:["You're able to filter out invisible channels now.(not well tested though.)"]},{title:"Thanks",type:"progress",items:["This plugins is originaly modified from VoiceChatNotifications by Metalloriff (https://github.com/Metalloriff/BetterDiscordPlugins/blob/a056291d1498deb721908cce45cff5625c7a7f1e/VoiceChatNotifications.plugin.js). Learned from his plugins how to implement this plugin. Thanks for him."]}],main:"index.js",defaultConfig:[{type:"category",id:"monitoring",name:"i18n:MonitoringTitle",collapsible:false,shown:true,settings:[{type:"monitoringList",itemType:"guild",id:"guilds",name:"i18n:GuildsTitle",note:"",value:[]},{type:"monitoringList",itemType:"user",id:"users",name:"i18n:UsersTitle",note:"",value:[]}]},{type:"category",id:"log",name:"i18n:LogTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"logAllUsers",name:"i18n:LogAllUsers",note:"",value:false},{type:"switch",id:"logInvisible",name:"i18n:LogInvisible",note:"",value:false},{type:"switch",id:"persistLog",name:"i18n:PersistLog",note:"",value:false},{type:"textbox",id:"maxLogEntries",name:"i18n:MaxLogEntries",note:"",value:"250"}]},{type:"category",id:"options",name:"i18n:OptionsTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"allGuilds",name:"i18n:AllGuilds",note:"",value:false},{type:"switch",id:"notifyInvisible",name:"i18n:NotifyInvisible",note:"",value:false},{type:"switch",id:"notifyLeave",name:"i18n:NotifyLeave",note:"",value:false},{type:"switch",id:"silentNotification",name:"i18n:SilentNotification",note:"",value:false},{type:"switch",id:"suppressInDnd",name:"i18n:SuppressInDnd",note:"",value:true},{type:"switch",id:"logHotkey",name:"i18n:LogHotkey",note:"",value:true}]}]};
+    const config = {info:{name:"VoiceChannelUserJoinNotification",authors:[{name:"DannyAAM",discord_id:"275978619354873856",github_username:"danny8376",twitter_username:"DannyAAMtw"}],version:"0.1.5",description:"A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",github:"https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",github_raw:"https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"},changelog:[{title:"Ability to filter invisible channels",items:["You're able to filter out invisible channels now.(not well tested though.)"]},{title:"Thanks",type:"progress",items:["This plugins is originaly modified from VoiceChatNotifications by Metalloriff (https://github.com/Metalloriff/BetterDiscordPlugins/blob/a056291d1498deb721908cce45cff5625c7a7f1e/VoiceChatNotifications.plugin.js). Learned from his plugins how to implement this plugin. Thanks for him."]}],main:"index.js",defaultConfig:[{type:"category",id:"monitoring",name:"i18n:MonitoringTitle",collapsible:false,shown:true,settings:[{type:"monitoringList",itemType:"guild",id:"guilds",name:"i18n:GuildsTitle",note:"",value:[]},{type:"monitoringList",itemType:"user",id:"users",name:"i18n:UsersTitle",note:"",value:[]}]},{type:"category",id:"log",name:"i18n:LogTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"logAllUsers",name:"i18n:LogAllUsers",note:"",value:false},{type:"switch",id:"logInvisible",name:"i18n:LogInvisible",note:"",value:false},{type:"switch",id:"persistLog",name:"i18n:PersistLog",note:"",value:false},{type:"textbox",id:"maxLogEntries",name:"i18n:MaxLogEntries",note:"",value:"250"}]},{type:"category",id:"options",name:"i18n:OptionsTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"allGuilds",name:"i18n:AllGuilds",note:"",value:false},{type:"switch",id:"notifyInvisible",name:"i18n:NotifyInvisible",note:"",value:false},{type:"switch",id:"notifyLeave",name:"i18n:NotifyLeave",note:"",value:false},{type:"switch",id:"silentNotification",name:"i18n:SilentNotification",note:"",value:false},{type:"switch",id:"suppressInDnd",name:"i18n:SuppressInDnd",note:"",value:true},{type:"switch",id:"logHotkey",name:"i18n:LogHotkey",note:"",value:true}]},{type:"category",id:"remoteNotify",name:"i18n:remoteNotifyTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"enable",name:"i18n:remoteNotifyEnable",note:"",value:false},{type:"textbox",id:"uri",name:"i18n:remoteNotifyUri",note:"",value:"https://webhook.example/webhook"},{type:"textbox",id:"contentType",name:"i18n:remoteNotifyContentType",note:"",value:"application/json"},{type:"textbox",id:"body",name:"i18n:remoteNotifyBody",note:"",value:""}]}]};
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
@@ -659,6 +659,58 @@ module.exports = (() => {
             }
         }
 
+        remoteNotification({msg, act, user, channel, lastChannel, guild}) {
+            const replace = (str, uriescape = false) => {
+                const strescape = (string) => { // copied from https://github.com/joliss/js-string-escape/blob/master/index.js
+                    return ('' + string).replace(/["'\\\n\r\u2028\u2029]/g, function (character) {
+                        // Escape all characters not included in SingleStringCharacters and
+                        // DoubleStringCharacters on
+                        // http://www.ecma-international.org/ecma-262/5.1/#sec-7.8.4
+                        switch (character) {
+                            case '"':
+                                case "'":
+                                case '\\':
+                                return '\\' + character
+                            // Four possible LineTerminator characters need to be escaped:
+                            case '\n':
+                                return '\\n'
+                            case '\r':
+                                return '\\r'
+                            case '\u2028':
+                                return '\\u2028'
+                            case '\u2029':
+                                return '\\u2029'
+                        }
+                    })
+                };
+                const replaceval = (val) => {
+                    return uriescape ? encodeURIComponent(val) : strescape(val);
+                };
+                return str
+                    .replace("{{user}}", replaceval(user.username))
+                    .replace("{{channel}}", replaceval(channel.name))
+                    .replace("{{guild}}", replaceval(guild.name))
+                    .replace("{{message}}", replaceval(msg));
+            };
+
+            const uri = replace(this.settings.remoteNotify.uri, true);
+            const body = replace(this.settings.remoteNotify.body);
+            //fetch(uri, {
+            require("request")({ // use nodejs request to avoid cors problem
+                uri,
+                headers: {
+                    "content-type": this.settings.remoteNotify.contentType
+                },
+                body
+            }, (error, response, body) => {
+                if (!error && response.statusCode == 200) {
+                    console.log(body);
+                } else {
+                    console.error("Webhook Request Error : ", error, response);
+                }
+            });
+        }
+
         notificationAndLog({act, user, channel, lastChannel, guild}, noNotify) {
             const lastChannelId = lastChannel === undefined ? null : lastChannel.id;
             if (this.settings.log.logInvisible || this.checkChannelVisibility(channel)) this.pushLog({
@@ -671,14 +723,16 @@ module.exports = (() => {
             });
             if(!noNotify && !(this.settings.options.suppressInDnd && DC.getLocalStatus() == "dnd") && !this.afkChannels.includes(channel.id) && (act !== "Leave" || this.settings.options.notifyLeave) && (this.settings.options.notifyInvisible || this.checkChannelVisibility(channel))) {
                 this.checkPatchI18n();
-                const notification = new Notification(this.getLocaleText(`notification${act}Message`, {
+                const notificationMsg = this.getLocaleText(`notification${act}Message`, {
                     user: user.username,
                     channel: channel.name,
                     guild: guild.name
-                }), {
+                });
+                const notification = new Notification(notificationMsg, {
                     silent: this.settings.options.silentNotification,
                     icon: user.getAvatarURL()
                 });
+                if (this.settings.remoteNotify.enable) this.remoteNotification({msg: notificationMsg, act, user, channel, lastChannel, guild});
                 if (act === "Join" || act === "Move") {
                     notification.addEventListener("click", () => {
                         DC.transitionToGuild(guild.id);
@@ -693,8 +747,6 @@ module.exports = (() => {
                     switch (id) {
                         case "config.monitoring.name":
                             return "監測清單";
-                        case "config.options.name":
-                            return "其他選項";
                         case "config.monitoring.guilds.name":
                             return "監測伺服器清單(使用伺服器右鍵選單增加)";
                         case "config.monitoring.users.name":
@@ -709,6 +761,8 @@ module.exports = (() => {
                             return "儲存紀錄";
                         case "config.log.maxLogEntries.name":
                             return "最大紀錄數量";
+                        case "config.options.name":
+                            return "其他選項";
                         case "config.options.allGuilds.name":
                             return "檢查所有已加入伺服器";
                         case "config.options.notifyInvisible.name":
@@ -721,6 +775,16 @@ module.exports = (() => {
                             return "勿擾模式時關閉通知";
                         case "config.options.logHotkey.name":
                             return "啟用 Alt+V 開啟記錄視窗";
+                        case "config.remoteNotify.name":
+                            return "遠端通知(Webhook)";
+                        case "config.remoteNotify.enable.name":
+                            return "啟用 Webhook";
+                        case "config.remoteNotify.uri.name":
+                            return "網址";
+                        case "config.remoteNotify.contentType.name":
+                            return "HTTP Content-Type";
+                        case "config.remoteNotify.body.name":
+                            return "內容";
                         
                         case "notificationJoinMessage":
                             return `${args.user} 進入了 ${args.channel} @ ${args.guild}`;
@@ -749,8 +813,6 @@ module.exports = (() => {
                     switch (id) {
                         case "config.monitoring.name":
                             return "Monitoring List";
-                        case "config.options.name":
-                            return "Other Options";
                         case "config.monitoring.guilds.name":
                             return "Monitoring Guild List (Add with guild context menu)";
                         case "config.monitoring.users.name":
@@ -765,6 +827,8 @@ module.exports = (() => {
                             return "Persist log";
                         case "config.log.maxLogEntries.name":
                             return "Max log entries counts";
+                        case "config.options.name":
+                            return "Other Options";
                         case "config.options.allGuilds.name":
                             return "Monitor all guilds";
                         case "config.options.notifyInvisible.name":
@@ -777,6 +841,16 @@ module.exports = (() => {
                             return "Suppress notifications while in Do Not Disturb";
                         case "config.options.logHotkey.name":
                             return "Enable Alt+V Log Panel";
+                        case "config.remoteNotify.name":
+                            return "Remote Notification (Webhook)";
+                        case "config.remoteNotify.enable.name":
+                            return "Enable Webhook";
+                        case "config.remoteNotify.uri.name":
+                            return "Uri";
+                        case "config.remoteNotify.contentType.name":
+                            return "HTTP Content-Type";
+                        case "config.remoteNotify.body.name":
+                            return "Content Body";
                         
                         case "notificationJoinMessage":
                             return `${args.user} joined ${args.channel} @ ${args.guild}`;

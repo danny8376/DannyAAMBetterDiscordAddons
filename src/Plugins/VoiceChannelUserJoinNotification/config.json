@@ -56,6 +56,19 @@
                 {"type": "switch", "id": "suppressInDnd", "name": "i18n:SuppressInDnd", "note": "", "value": true},
                 {"type": "switch", "id": "logHotkey", "name": "i18n:LogHotkey", "note": "", "value": true}
             ]
+        },
+        {
+            "type": "category",
+            "id": "remoteNotify",
+            "name": "i18n:remoteNotifyTitle",
+            "collapsible": false,
+            "shown": true,
+            "settings": [
+                {"type": "switch", "id": "enable", "name": "i18n:remoteNotifyEnable", "note": "", "value": false},
+                {"type": "textbox", "id": "uri", "name": "i18n:remoteNotifyUri", "note": "", "value": "https://webhook.example/webhook"},
+                {"type": "textbox", "id": "contentType", "name": "i18n:remoteNotifyContentType", "note": "", "value": "application/json"},
+                {"type": "textbox", "id": "body", "name": "i18n:remoteNotifyBody", "note": "", "value": ""}
+            ]
         }
     ]
 }

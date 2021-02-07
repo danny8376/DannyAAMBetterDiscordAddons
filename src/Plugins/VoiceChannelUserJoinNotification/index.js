@@ -548,6 +548,58 @@ module.exports = (Plugin, Api) => {
             }
         }
 
+        remoteNotification({msg, act, user, channel, lastChannel, guild}) {
+            const replace = (str, uriescape = false) => {
+                const strescape = (string) => { // copied from https://github.com/joliss/js-string-escape/blob/master/index.js
+                    return ('' + string).replace(/["'\\\n\r\u2028\u2029]/g, function (character) {
+                        // Escape all characters not included in SingleStringCharacters and
+                        // DoubleStringCharacters on
+                        // http://www.ecma-international.org/ecma-262/5.1/#sec-7.8.4
+                        switch (character) {
+                            case '"':
+                                case "'":
+                                case '\\':
+                                return '\\' + character
+                            // Four possible LineTerminator characters need to be escaped:
+                            case '\n':
+                                return '\\n'
+                            case '\r':
+                                return '\\r'
+                            case '\u2028':
+                                return '\\u2028'
+                            case '\u2029':
+                                return '\\u2029'
+                        }
+                    })
+                };
+                const replaceval = (val) => {
+                    return uriescape ? encodeURIComponent(val) : strescape(val);
+                };
+                return str
+                    .replace("{{user}}", replaceval(user.username))
+                    .replace("{{channel}}", replaceval(channel.name))
+                    .replace("{{guild}}", replaceval(guild.name))
+                    .replace("{{message}}", replaceval(msg));
+            };
+
+            const uri = replace(this.settings.remoteNotify.uri, true);
+            const body = replace(this.settings.remoteNotify.body);
+            //fetch(uri, {
+            require("request")({ // use nodejs request to avoid cors problem
+                uri,
+                headers: {
+                    "content-type": this.settings.remoteNotify.contentType
+                },
+                body
+            }, (error, response, body) => {
+                if (!error && response.statusCode == 200) {
+                    console.log(body);
+                } else {
+                    console.error("Webhook Request Error : ", error, response);
+                }
+            });
+        }
+
         notificationAndLog({act, user, channel, lastChannel, guild}, noNotify) {
             const lastChannelId = lastChannel === undefined ? null : lastChannel.id;
             if (this.settings.log.logInvisible || this.checkChannelVisibility(channel)) this.pushLog({
@@ -560,14 +612,16 @@ module.exports = (Plugin, Api) => {
             });
             if(!noNotify && !(this.settings.options.suppressInDnd && DC.getLocalStatus() == "dnd") && !this.afkChannels.includes(channel.id) && (act !== "Leave" || this.settings.options.notifyLeave) && (this.settings.options.notifyInvisible || this.checkChannelVisibility(channel))) {
                 this.checkPatchI18n();
-                const notification = new Notification(this.getLocaleText(`notification${act}Message`, {
+                const notificationMsg = this.getLocaleText(`notification${act}Message`, {
                     user: user.username,
                     channel: channel.name,
                     guild: guild.name
-                }), {
+                });
+                const notification = new Notification(notificationMsg, {
                     silent: this.settings.options.silentNotification,
                     icon: user.getAvatarURL()
                 });
+                if (this.settings.remoteNotify.enable) this.remoteNotification({msg: notificationMsg, act, user, channel, lastChannel, guild});
                 if (act === "Join" || act === "Move") {
                     notification.addEventListener("click", () => {
                         DC.transitionToGuild(guild.id);
@@ -582,8 +636,6 @@ module.exports = (Plugin, Api) => {
                     switch (id) {
                         case "config.monitoring.name":
                             return "監測清單";
-                        case "config.options.name":
-                            return "其他選項";
                         case "config.monitoring.guilds.name":
                             return "監測伺服器清單(使用伺服器右鍵選單增加)";
                         case "config.monitoring.users.name":
@@ -598,6 +650,8 @@ module.exports = (Plugin, Api) => {
                             return "儲存紀錄";
                         case "config.log.maxLogEntries.name":
                             return "最大紀錄數量";
+                        case "config.options.name":
+                            return "其他選項";
                         case "config.options.allGuilds.name":
                             return "檢查所有已加入伺服器";
                         case "config.options.notifyInvisible.name":
@@ -610,6 +664,16 @@ module.exports = (Plugin, Api) => {
                             return "勿擾模式時關閉通知";
                         case "config.options.logHotkey.name":
                             return "啟用 Alt+V 開啟記錄視窗";
+                        case "config.remoteNotify.name":
+                            return "遠端通知(Webhook)";
+                        case "config.remoteNotify.enable.name":
+                            return "啟用 Webhook";
+                        case "config.remoteNotify.uri.name":
+                            return "網址";
+                        case "config.remoteNotify.contentType.name":
+                            return "HTTP Content-Type";
+                        case "config.remoteNotify.body.name":
+                            return "內容";
                         
                         case "notificationJoinMessage":
                             return `${args.user} 進入了 ${args.channel} @ ${args.guild}`;
@@ -638,8 +702,6 @@ module.exports = (Plugin, Api) => {
                     switch (id) {
                         case "config.monitoring.name":
                             return "Monitoring List";
-                        case "config.options.name":
-                            return "Other Options";
                         case "config.monitoring.guilds.name":
                             return "Monitoring Guild List (Add with guild context menu)";
                         case "config.monitoring.users.name":
@@ -654,6 +716,8 @@ module.exports = (Plugin, Api) => {
                             return "Persist log";
                         case "config.log.maxLogEntries.name":
                             return "Max log entries counts";
+                        case "config.options.name":
+                            return "Other Options";
                         case "config.options.allGuilds.name":
                             return "Monitor all guilds";
                         case "config.options.notifyInvisible.name":
@@ -666,6 +730,16 @@ module.exports = (Plugin, Api) => {
                             return "Suppress notifications while in Do Not Disturb";
                         case "config.options.logHotkey.name":
                             return "Enable Alt+V Log Panel";
+                        case "config.remoteNotify.name":
+                            return "Remote Notification (Webhook)";
+                        case "config.remoteNotify.enable.name":
+                            return "Enable Webhook";
+                        case "config.remoteNotify.uri.name":
+                            return "Uri";
+                        case "config.remoteNotify.contentType.name":
+                            return "HTTP Content-Type";
+                        case "config.remoteNotify.body.name":
+                            return "Content Body";
                         
                         case "notificationJoinMessage":
                             return `${args.user} joined ${args.channel} @ ${args.guild}`;
