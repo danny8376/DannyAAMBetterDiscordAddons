@@ -7,7 +7,7 @@
             "github_username": "danny8376",
             "twitter_username": "DannyAAMtw"
         }],
-        "version": "0.1.6.1",
+        "version": "0.1.7",
         "description": "A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",
         "github": "https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",
         "github_raw": "https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"
