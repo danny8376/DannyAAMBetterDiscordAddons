@@ -1,6 +1,8 @@
 
 module.exports = (Plugin, Api) => {
     const {Patcher, DiscordContextMenu, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
+    const {React, DiscordConstants} = DiscordModules;
+    const {Permissions} = DiscordConstants;
 
     const DC = {
         cache: {
@@ -132,9 +134,12 @@ module.exports = (Plugin, Api) => {
                     itemHTML = require(`settings_item_guild.html`).trim();
                     value.forEach(item => {
                         const guild = DC.getCachedGuild(item);
-                        const dom = DOMTools.createElement(Utilities.formatString(itemHTML, {
-                    		guild_icon: guild.getIconURL(),
+                        const dom = guild ? DOMTools.createElement(Utilities.formatString(itemHTML, {
                     		guild_name: DOMTools.escapeHTML(guild.name),
+                    		guild_icon: guild.getIconURL(),
+                        })) : DOMTools.createElement(Utilities.formatString(itemHTML, {
+                    		guild_name: `ID:${item}`,
+                    		guild_icon: "",
                         }));
                         dom.querySelector(".VCUJNRemove").addEventListener("click", () => {
                             const idx = value.indexOf(item);
@@ -151,10 +156,14 @@ module.exports = (Plugin, Api) => {
                     itemHTML = require("settings_item_user.html").trim();
                     value.forEach(item => {
                         const user = DC.getCachedUser(item);
-                        const dom = DOMTools.createElement(Utilities.formatString(itemHTML, {
+                        const dom = user ? DOMTools.createElement(Utilities.formatString(itemHTML, {
                     		user_name: DOMTools.escapeHTML(user.username),
                     		user_discrim: user.discriminator,
                     		avatar_url: user.getAvatarURL(),
+                        })) : DOMTools.createElement(Utilities.formatString(itemHTML, {
+                    		user_name: `ID:${item}`,
+                    		user_discrim: "",
+                    		avatar_url: "",
                         }));
                         dom.querySelector(".VCUJNRemove").addEventListener("click", () => {
                             const idx = value.indexOf(item);
@@ -557,7 +566,7 @@ module.exports = (Plugin, Api) => {
             if (guildId !== undefined) log = log.filter(entry => entry.guildId === guildId);
             if (channelId !== undefined) log = log.filter(entry => entry.channelId === channelId || entry.lastChannelId === channelId);
             if (userId !== undefined) log = log.filter(entry => entry.userId === userId);
-            const ce = DiscordModules.React.createElement;
+            const ce = React.createElement;
             const AuditLog = DiscordClasses.AuditLog;
             const children = log.map(entry => {
                 const user = DC.getCachedUser(entry.userId);
@@ -579,7 +588,7 @@ module.exports = (Plugin, Api) => {
         }
 
         checkChannelVisibility(channel) {
-            return DC.can(DiscordModules.DiscordConstants.Permissions["VIEW_CHANNEL"], channel);
+            return DC.can(DiscordConstants.Permissions.VIEW_CHANNEL, channel);
         }
 
         pushLog(logEntry) {

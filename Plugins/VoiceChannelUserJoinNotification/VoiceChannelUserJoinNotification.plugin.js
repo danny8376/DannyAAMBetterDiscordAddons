@@ -29,7 +29,7 @@
 @else@*/
 
 module.exports = (() => {
-    const config = {info:{name:"VoiceChannelUserJoinNotification",authors:[{name:"DannyAAM",discord_id:"275978619354873856",github_username:"danny8376",twitter_username:"DannyAAMtw"}],version:"0.1.7",description:"A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",github:"https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",github_raw:"https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"},changelog:[{title:"Remote Notification / Webhook",items:["Add support for webhook, which can be used for remote notifications."]},{title:"Fix persist sotrage",type:"fixed",items:["Persist storage should work correctly now."]},{title:"Thanks",type:"progress",items:["This plugins is originaly modified from VoiceChatNotifications by Metalloriff (https://github.com/Metalloriff/BetterDiscordPlugins/blob/a056291d1498deb721908cce45cff5625c7a7f1e/VoiceChatNotifications.plugin.js). Learned from his plugins how to implement this plugin. Thanks for him."]}],main:"index.js",defaultConfig:[{type:"category",id:"monitoring",name:"i18n:MonitoringTitle",collapsible:false,shown:true,settings:[{type:"monitoringList",itemType:"guild",id:"guilds",name:"i18n:GuildsTitle",note:"",value:[]},{type:"monitoringList",itemType:"user",id:"users",name:"i18n:UsersTitle",note:"",value:[]}]},{type:"category",id:"log",name:"i18n:LogTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"logAllUsers",name:"i18n:LogAllUsers",note:"",value:false},{type:"switch",id:"logInvisible",name:"i18n:LogInvisible",note:"",value:false},{type:"switch",id:"persistLog",name:"i18n:PersistLog",note:"",value:false},{type:"textbox",id:"maxLogEntries",name:"i18n:MaxLogEntries",note:"",value:"250"}]},{type:"category",id:"options",name:"i18n:OptionsTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"allGuilds",name:"i18n:AllGuilds",note:"",value:false},{type:"switch",id:"notifyInvisible",name:"i18n:NotifyInvisible",note:"",value:false},{type:"switch",id:"notifyLeave",name:"i18n:NotifyLeave",note:"",value:false},{type:"switch",id:"silentNotification",name:"i18n:SilentNotification",note:"",value:false},{type:"switch",id:"suppressInDnd",name:"i18n:SuppressInDnd",note:"",value:true},{type:"switch",id:"logHotkey",name:"i18n:LogHotkey",note:"",value:true}]},{type:"category",id:"remoteNotify",name:"i18n:remoteNotifyTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"enable",name:"i18n:remoteNotifyEnable",note:"",value:false},{type:"textbox",id:"uri",name:"i18n:remoteNotifyUri",note:"",value:"https://webhook.example/webhook"},{type:"textbox",id:"contentType",name:"i18n:remoteNotifyContentType",note:"",value:"application/json"},{type:"textbox",id:"body",name:"i18n:remoteNotifyBody",note:"",value:""}]}]};
+    const config = {info:{name:"VoiceChannelUserJoinNotification",authors:[{name:"DannyAAM",discord_id:"275978619354873856",github_username:"danny8376",twitter_username:"DannyAAMtw"}],version:"0.1.8",description:"A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",github:"https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",github_raw:"https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"},changelog:[{title:"Fix non-cached user/guild for settings panel",type:"fixed",items:["Non-cached user/guild should not prevent settings panel from opening now.."]},{title:"Thanks",type:"progress",items:["This plugins is originaly modified from VoiceChatNotifications by Metalloriff (https://github.com/Metalloriff/BetterDiscordPlugins/blob/a056291d1498deb721908cce45cff5625c7a7f1e/VoiceChatNotifications.plugin.js). Learned from his plugins how to implement this plugin. Thanks for him."]}],main:"index.js",defaultConfig:[{type:"category",id:"monitoring",name:"i18n:MonitoringTitle",collapsible:false,shown:true,settings:[{type:"monitoringList",itemType:"guild",id:"guilds",name:"i18n:GuildsTitle",note:"",value:[]},{type:"monitoringList",itemType:"user",id:"users",name:"i18n:UsersTitle",note:"",value:[]}]},{type:"category",id:"log",name:"i18n:LogTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"logAllUsers",name:"i18n:LogAllUsers",note:"",value:false},{type:"switch",id:"logInvisible",name:"i18n:LogInvisible",note:"",value:false},{type:"switch",id:"persistLog",name:"i18n:PersistLog",note:"",value:false},{type:"textbox",id:"maxLogEntries",name:"i18n:MaxLogEntries",note:"",value:"250"}]},{type:"category",id:"options",name:"i18n:OptionsTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"allGuilds",name:"i18n:AllGuilds",note:"",value:false},{type:"switch",id:"notifyInvisible",name:"i18n:NotifyInvisible",note:"",value:false},{type:"switch",id:"notifyLeave",name:"i18n:NotifyLeave",note:"",value:false},{type:"switch",id:"silentNotification",name:"i18n:SilentNotification",note:"",value:false},{type:"switch",id:"suppressInDnd",name:"i18n:SuppressInDnd",note:"",value:true},{type:"switch",id:"logHotkey",name:"i18n:LogHotkey",note:"",value:true}]},{type:"category",id:"remoteNotify",name:"i18n:remoteNotifyTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"enable",name:"i18n:remoteNotifyEnable",note:"",value:false},{type:"textbox",id:"uri",name:"i18n:remoteNotifyUri",note:"",value:"https://webhook.example/webhook"},{type:"textbox",id:"contentType",name:"i18n:remoteNotifyContentType",note:"",value:"application/json"},{type:"textbox",id:"body",name:"i18n:remoteNotifyBody",note:"",value:""}]}]};
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
@@ -54,6 +54,8 @@ module.exports = (() => {
     } : (([Plugin, Api]) => {
         const plugin = (Plugin, Api) => {
     const {Patcher, DiscordContextMenu, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
+    const {React, DiscordConstants} = DiscordModules;
+    const {Permissions} = DiscordConstants;
 
     const DC = {
         cache: {
@@ -207,9 +209,12 @@ module.exports = (() => {
 `.trim();
                     value.forEach(item => {
                         const guild = DC.getCachedGuild(item);
-                        const dom = DOMTools.createElement(Utilities.formatString(itemHTML, {
-                    		guild_icon: guild.getIconURL(),
+                        const dom = guild ? DOMTools.createElement(Utilities.formatString(itemHTML, {
                     		guild_name: DOMTools.escapeHTML(guild.name),
+                    		guild_icon: guild.getIconURL(),
+                        })) : DOMTools.createElement(Utilities.formatString(itemHTML, {
+                    		guild_name: `ID:${item}`,
+                    		guild_icon: "",
                         }));
                         dom.querySelector(".VCUJNRemove").addEventListener("click", () => {
                             const idx = value.indexOf(item);
@@ -244,10 +249,14 @@ module.exports = (() => {
 `.trim();
                     value.forEach(item => {
                         const user = DC.getCachedUser(item);
-                        const dom = DOMTools.createElement(Utilities.formatString(itemHTML, {
+                        const dom = user ? DOMTools.createElement(Utilities.formatString(itemHTML, {
                     		user_name: DOMTools.escapeHTML(user.username),
                     		user_discrim: user.discriminator,
                     		avatar_url: user.getAvatarURL(),
+                        })) : DOMTools.createElement(Utilities.formatString(itemHTML, {
+                    		user_name: `ID:${item}`,
+                    		user_discrim: "",
+                    		avatar_url: "",
                         }));
                         dom.querySelector(".VCUJNRemove").addEventListener("click", () => {
                             const idx = value.indexOf(item);
@@ -668,7 +677,7 @@ module.exports = (() => {
             if (guildId !== undefined) log = log.filter(entry => entry.guildId === guildId);
             if (channelId !== undefined) log = log.filter(entry => entry.channelId === channelId || entry.lastChannelId === channelId);
             if (userId !== undefined) log = log.filter(entry => entry.userId === userId);
-            const ce = DiscordModules.React.createElement;
+            const ce = React.createElement;
             const AuditLog = DiscordClasses.AuditLog;
             const children = log.map(entry => {
                 const user = DC.getCachedUser(entry.userId);
@@ -690,7 +699,7 @@ module.exports = (() => {
         }
 
         checkChannelVisibility(channel) {
-            return DC.can(DiscordModules.DiscordConstants.Permissions["VIEW_CHANNEL"], channel);
+            return DC.can(DiscordConstants.Permissions.VIEW_CHANNEL, channel);
         }
 
         pushLog(logEntry) {
