@@ -115,7 +115,7 @@ module.exports = (Plugin, Api) => {
         "getStatus",
         "can",
         "transitionToGuild",
-        "getLocaleInfo"
+        "getLocale"
     ].forEach(funcName => {
          DC[funcName] = WebpackModules.getByProps(funcName)[funcName];
     });
@@ -193,7 +193,7 @@ module.exports = (Plugin, Api) => {
         }
 
         checkPatchI18n() {
-            const sysLocale = DC.getLocaleInfo().code;
+            const sysLocale = DC.getLocale();
             if (this.currentLocale !== sysLocale) {
                 this.currentLocale = sysLocale;
 
@@ -681,7 +681,7 @@ module.exports = (Plugin, Api) => {
         }
 
         getLocaleText(id, args) {
-            switch (DC.getLocaleInfo().code) {
+            switch (DC.getLocale()) {
                 case "zh-TW":
                     switch (id) {
                         case "config.monitoring.name":
