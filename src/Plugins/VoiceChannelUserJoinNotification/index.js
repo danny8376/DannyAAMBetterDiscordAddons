@@ -593,7 +593,7 @@ module.exports = (Plugin, Api) => {
         }
 
         checkChannelVisibility(channel) {
-            return DC.can(Permissions.VIEW_CHANNEL, channel);
+            return DC.can(Permissions.VIEW_CHANNEL, DC.getCurrentUser(), channel);
         }
 
         pushLog(logEntry) {
