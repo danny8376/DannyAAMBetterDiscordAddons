@@ -107,17 +107,22 @@ module.exports = (Plugin, Api) => {
     };
     [
         "getVoiceStates",
-        "getUser",
-        "getChannel",
-        "getGuild",
-        "getGuilds",
-        "getCurrentUser",
-        "getStatus",
-        "can",
-        "transitionToGuild",
-        "getLocale"
-    ].forEach(funcName => {
-         DC[funcName] = WebpackModules.getByProps(funcName)[funcName];
+        "getUser|UserStore",
+        "getChannel|ChannelStore",
+        "getGuild|GuildStore",
+        "getGuilds|GuildStore",
+        "getCurrentUser|UserStore",
+        "getStatus|UserStatusStore",
+        "can|Permissions",
+        "transitionToGuild|NavigationUtils",
+        "getLocale|LocaleManager"
+    ].forEach((names) => {
+        const [funcName, storeName] = names.split("|");
+        if (storeName) {
+            DC[funcName] = DiscordModules[storeName][funcName];
+        } else {
+            DC[funcName] = WebpackModules.getByProps(funcName)[funcName];
+        }
     });
 
     class SettingMonitoringList extends Api.Settings.SettingField {
@@ -588,7 +593,7 @@ module.exports = (Plugin, Api) => {
         }
 
         checkChannelVisibility(channel) {
-            return DC.can(DiscordConstants.Permissions.VIEW_CHANNEL, channel);
+            return DC.can(Permissions.VIEW_CHANNEL, channel);
         }
 
         pushLog(logEntry) {
