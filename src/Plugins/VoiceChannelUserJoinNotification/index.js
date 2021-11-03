@@ -106,7 +106,7 @@ module.exports = (Plugin, Api) => {
         })
     };
     [
-        "getVoiceStates",
+        "getVoiceStates||isCurrentClientInVoiceChannel",
         "getUser|UserStore",
         "getChannel|ChannelStore",
         "getGuild|GuildStore",
@@ -117,11 +117,12 @@ module.exports = (Plugin, Api) => {
         "transitionToGuild|NavigationUtils",
         "getLocale|LocaleManager"
     ].forEach((names) => {
-        const [funcName, storeName] = names.split("|");
+        let [funcName, storeName, searchPropName] = names.split("|");
         if (storeName) {
             DC[funcName] = DiscordModules[storeName][funcName];
         } else {
-            DC[funcName] = WebpackModules.getByProps(funcName)[funcName];
+            searchPropName = searchPropName || funcName;
+            DC[funcName] = WebpackModules.getByProps(searchPropName)[funcName];
         }
     });
 
