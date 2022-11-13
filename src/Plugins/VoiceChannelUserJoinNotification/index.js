@@ -1,8 +1,9 @@
 
 module.exports = (Plugin, Api) => {
-    const {Patcher, DiscordContextMenu, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
-    const {React, DiscordConstants} = DiscordModules;
-    const {Permissions} = DiscordConstants;
+    //const {Patcher, DiscordContextMenu, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
+    const {Patcher, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
+    const {React, DiscordPermissions} = DiscordModules;
+    const {ContextMenu} = BdApi;
 
     const DC = {
         cache: {
@@ -117,13 +118,9 @@ module.exports = (Plugin, Api) => {
         "transitionToGuild|NavigationUtils",
         "getLocale|LocaleManager"
     ].forEach((names) => {
-        let [funcName, storeName, searchPropName] = names.split("|");
-        if (storeName) {
-            DC[funcName] = DiscordModules[storeName][funcName];
-        } else {
-            searchPropName = searchPropName || funcName;
-            DC[funcName] = WebpackModules.getByProps(searchPropName)[funcName];
-        }
+        const [funcName, storeName, searchPropName] = names.split("|");
+        let store = storeName ? DiscordModules[storeName] : WebpackModules.getByProps(searchPropName || funcName);
+        DC[funcName] = store[funcName].bind(store);
     });
 
     class SettingMonitoringList extends Api.Settings.SettingField {
@@ -484,27 +481,22 @@ module.exports = (Plugin, Api) => {
         }
 
         patchGuildContextMenu() {
-            const GuildContextMenu = WebpackModules.getModule(m => m.default && m.default.displayName == "GuildContextMenu");
-            this.contextMenuPatches.push(Patcher.after(GuildContextMenu, "default", (_, [props], retVal) => {
-                const menuChildren = Utilities.getNestedProp(
-                    Utilities.findInReactTree(retVal, e => e && e.type && e.type.displayName === 'Menu'),
-                    'props.children'
-                );
-                menuChildren.push(DiscordContextMenu.buildMenuItem({
+            this.contextMenuPatches.push(ContextMenu.patch("guild-context", (retVal, props) => {
+                retVal.props.children.push(ContextMenu.buildItem({
                     id: "VCUJNContextmenuGuildVoiceLog",
                     label: this.getLocaleText("contextmenuVoiceLog"), action: () => {
                         this.showVoiceLogModal({guildId: props.guild.id});
                     }
                 }));
                 if (this.settings.monitoring.guilds.includes(props.guild.id)) {
-                    menuChildren.push(DiscordContextMenu.buildMenuItem({
+                    retVal.props.children.push(ContextMenu.buildItem({
                         id: "VCUJNContextmenuRemoveUserMonitoring",
                         label: this.getLocaleText("contextmenuRemoveMonitoring"), action: () => {
                             this.removeMonitoringList("guild", props.guild.id);
                         }
                     }));
                 } else {
-                    menuChildren.push(DiscordContextMenu.buildMenuItem({
+                    retVal.props.children.push(ContextMenu.buildItem({
                         id: "VCUJNContextmenuAddUserMonitoring",
                         label: this.getLocaleText("contextmenuAddMonitoring"), action: () => {
                             this.addMonitoringList("guild", props.guild.id);
@@ -515,55 +507,40 @@ module.exports = (Plugin, Api) => {
         }
 
         patchVoiceChannelContextMenu() {
-            const VCCMs = WebpackModules.getModules(m => m.default && m.default.displayName == "ChannelListVoiceChannelContextMenu");
-            const patch = (_, [props], retVal) => {
-                Utilities.getNestedProp(
-                    Utilities.findInReactTree(retVal, e => e && e.type && e.type.displayName === 'Menu'),
-                    'props.children'
-                ).push(DiscordContextMenu.buildMenuItem({
+            this.contextMenuPatches.push(ContextMenu.patch("channel-context", (retVal, props) => {
+                retVal.props.children.push(ContextMenu.buildItem({
                     id: "VCUJNContextmenuChannelVoiceLog",
                     label: this.getLocaleText("contextmenuVoiceLog"), action: () => {
                         this.showVoiceLogModal({channelId: props.channel.id});
                     }
                 }));
-            };
-            VCCMs.forEach(VCCM => {
-                this.contextMenuPatches.push(Patcher.after(VCCM, "default", patch));
-            });
+            }));
         }
 
         patchUserContextMenu() {
-            const UserContextMenu = WebpackModules.getModule(m => m.default && m.default.displayName == "GuildChannelUserContextMenu");
-            const DMUserContextMenu = WebpackModules.getModule(m => m.default && m.default.displayName == "DMUserContextMenu");
-            const patch = (_, [props], retVal) => {
-                const menuChildren = Utilities.getNestedProp(
-                    Utilities.findInReactTree(retVal, e => e && e.type && e.type.displayName === 'Menu'),
-                    'props.children'
-                );
-                menuChildren.push(DiscordContextMenu.buildMenuItem({
+            this.contextMenuPatches.push(ContextMenu.patch("user-context", (retVal, props) => {
+                retVal.props.children.push(ContextMenu.buildItem({
                     id: "VCUJNContextmenuUserVoiceLog",
                     label: this.getLocaleText("contextmenuVoiceLog"), action: () => {
                         this.showVoiceLogModal({userId: props.user.id});
                     }
                 }));
                 if (this.settings.monitoring.users.includes(props.user.id)) {
-                    menuChildren.push(DiscordContextMenu.buildMenuItem({
+                    retVal.props.children.push(ContextMenu.buildItem({
                         id: "VCUJNContextmenuRemoveGuildMonitoring",
                         label: this.getLocaleText("contextmenuRemoveMonitoring"), action: () => {
                             this.removeMonitoringList("user", props.user.id);
                         }
                     }));
                 } else {
-                    menuChildren.push(DiscordContextMenu.buildMenuItem({
+                    retVal.props.children.push(ContextMenu.buildItem({
                         id: "VCUJNContextmenuAddGuildMonitoring",
                         label: this.getLocaleText("contextmenuAddMonitoring"), action: () => {
                             this.addMonitoringList("user", props.user.id);
                         }
                     }));
                 }
-            };
-            this.contextMenuPatches.push(Patcher.after(UserContextMenu, "default", patch));
-            this.contextMenuPatches.push(Patcher.after(DMUserContextMenu, "default", patch));
+            }));
         }
 
         showVoiceLogModal({userId, channelId, guildId}={}) {
@@ -594,7 +571,7 @@ module.exports = (Plugin, Api) => {
         }
 
         checkChannelVisibility(channel) {
-            return DC.can(Permissions.VIEW_CHANNEL, DC.getCurrentUser(), channel);
+            return DC.can(DiscordPermissions.VIEW_CHANNEL, DC.getCurrentUser(), channel);
         }
 
         pushLog(logEntry) {
