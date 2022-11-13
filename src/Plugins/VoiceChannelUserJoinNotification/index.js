@@ -1,6 +1,5 @@
 
 module.exports = (Plugin, Api) => {
-    //const {Patcher, DiscordContextMenu, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
     const {Patcher, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
     const {React, DiscordPermissions} = DiscordModules;
     const {ContextMenu} = BdApi;
@@ -615,11 +614,11 @@ module.exports = (Plugin, Api) => {
                     .replace("{{message}}", replaceval(msg));
             };
 
-            const uri = replace(this.settings.remoteNotify.uri, true);
+            const url = replace(this.settings.remoteNotify.uri, true);
             const body = replace(this.settings.remoteNotify.body);
             //fetch(uri, {
             require("request")({ // use nodejs request to avoid cors problem
-                uri,
+                url,
                 headers: {
                     "content-type": this.settings.remoteNotify.contentType
                 },

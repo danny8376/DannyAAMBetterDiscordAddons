@@ -1,7 +1,7 @@
 /**
  * @name VoiceChannelUserJoinNotification
  * @description A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)
- * @version 0.1.13
+ * @version 0.1.14
  * @author DannyAAM
  * @authorId 275978619354873856
  * @website https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification
@@ -43,7 +43,7 @@ const config = {
                 twitter_username: "DannyAAMtw"
             }
         ],
-        version: "0.1.13",
+        version: "0.1.14",
         description: "A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",
         github: "https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",
         github_raw: "https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js",
@@ -63,6 +63,13 @@ const config = {
             type: "fixed",
             items: [
                 "Locale should work now... Only Triditional Chinese users will notice that though."
+            ]
+        },
+        {
+            title: "Fix webhook",
+            type: "fixed",
+            items: [
+                "Webhook should work now... unexpected little api change..."
             ]
         },
         {
@@ -256,7 +263,6 @@ if (!global.ZeresPluginLibrary) {
  
 module.exports = !global.ZeresPluginLibrary ? Dummy : (([Plugin, Api]) => {
      const plugin = (Plugin, Api) => {
-    //const {Patcher, DiscordContextMenu, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
     const {Patcher, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
     const {React, DiscordPermissions} = DiscordModules;
     const {ContextMenu} = BdApi;
@@ -929,11 +935,11 @@ module.exports = !global.ZeresPluginLibrary ? Dummy : (([Plugin, Api]) => {
                     .replace("{{message}}", replaceval(msg));
             };
 
-            const uri = replace(this.settings.remoteNotify.uri, true);
+            const url = replace(this.settings.remoteNotify.uri, true);
             const body = replace(this.settings.remoteNotify.body);
             //fetch(uri, {
             require("request")({ // use nodejs request to avoid cors problem
-                uri,
+                url,
                 headers: {
                     "content-type": this.settings.remoteNotify.contentType
                 },
