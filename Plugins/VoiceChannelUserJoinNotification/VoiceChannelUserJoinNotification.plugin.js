@@ -1,58 +1,264 @@
 /**
  * @name VoiceChannelUserJoinNotification
- * @authorLink https://saru.moe
+ * @description A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)
+ * @version 0.1.12
+ * @author DannyAAM
+ * @authorId 275978619354873856
  * @website https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification
  * @source https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js
  */
 /*@cc_on
 @if (@_jscript)
-	
-	// Offer to self-install for clueless users that try to run this directly.
-	var shell = WScript.CreateObject("WScript.Shell");
-	var fs = new ActiveXObject("Scripting.FileSystemObject");
-	var pathPlugins = shell.ExpandEnvironmentStrings("%APPDATA%\BetterDiscord\plugins");
-	var pathSelf = WScript.ScriptFullName;
-	// Put the user at ease by addressing them in the first person
-	shell.Popup("It looks like you've mistakenly tried to run me directly. \n(Don't do that!)", 0, "I'm a plugin for BetterDiscord", 0x30);
-	if (fs.GetParentFolderName(pathSelf) === fs.GetAbsolutePathName(pathPlugins)) {
-		shell.Popup("I'm in the correct folder already.", 0, "I'm already installed", 0x40);
-	} else if (!fs.FolderExists(pathPlugins)) {
-		shell.Popup("I can't find the BetterDiscord plugins folder.\nAre you sure it's even installed?", 0, "Can't install myself", 0x10);
-	} else if (shell.Popup("Should I copy myself to BetterDiscord's plugins folder for you?", 0, "Do you need some help?", 0x34) === 6) {
-		fs.CopyFile(pathSelf, fs.BuildPath(pathPlugins, fs.GetFileName(pathSelf)), true);
-		// Show the user where to put plugins in the future
-		shell.Exec("explorer " + pathPlugins);
-		shell.Popup("I'm installed!", 0, "Successfully installed", 0x40);
-	}
-	WScript.Quit();
+    
+    // Offer to self-install for clueless users that try to run this directly.
+    var shell = WScript.CreateObject("WScript.Shell");
+    var fs = new ActiveXObject("Scripting.FileSystemObject");
+    var pathPlugins = shell.ExpandEnvironmentStrings("%APPDATA%\\BetterDiscord\\plugins");
+    var pathSelf = WScript.ScriptFullName;
+    // Put the user at ease by addressing them in the first person
+    shell.Popup("It looks like you've mistakenly tried to run me directly. \n(Don't do that!)", 0, "I'm a plugin for BetterDiscord", 0x30);
+    if (fs.GetParentFolderName(pathSelf) === fs.GetAbsolutePathName(pathPlugins)) {
+        shell.Popup("I'm in the correct folder already.", 0, "I'm already installed", 0x40);
+    } else if (!fs.FolderExists(pathPlugins)) {
+        shell.Popup("I can't find the BetterDiscord plugins folder.\nAre you sure it's even installed?", 0, "Can't install myself", 0x10);
+    } else if (shell.Popup("Should I copy myself to BetterDiscord's plugins folder for you?", 0, "Do you need some help?", 0x34) === 6) {
+        fs.CopyFile(pathSelf, fs.BuildPath(pathPlugins, fs.GetFileName(pathSelf)), true);
+        // Show the user where to put plugins in the future
+        shell.Exec("explorer " + pathPlugins);
+        shell.Popup("I'm installed!", 0, "Successfully installed", 0x40);
+    }
+    WScript.Quit();
 
 @else@*/
-
-module.exports = (() => {
-    const config = {info:{name:"VoiceChannelUserJoinNotification",authors:[{name:"DannyAAM",discord_id:"275978619354873856",github_username:"danny8376",twitter_username:"DannyAAMtw"}],version:"0.1.12",description:"A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",github:"https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",github_raw:"https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"},changelog:[{title:"Fix wrong getVoiceState function",type:"fixed",items:["Fix wrong getVoiceState function"]},{title:"(Previous) Fix permission checking",type:"fixed",items:["Fix permission checking"]},{title:"(Previously previous) Try to fix lots of stuff for updated discord",type:"fixed",items:["Try to fix lots of stuff for updated discord"]},{title:"Thanks",type:"progress",items:["This plugins is originaly modified from VoiceChatNotifications by Metalloriff (https://github.com/Metalloriff/BetterDiscordPlugins/blob/a056291d1498deb721908cce45cff5625c7a7f1e/VoiceChatNotifications.plugin.js). Learned from his plugins how to implement this plugin. Thanks for him."]}],main:"index.js",defaultConfig:[{type:"category",id:"monitoring",name:"i18n:MonitoringTitle",collapsible:false,shown:true,settings:[{type:"monitoringList",itemType:"guild",id:"guilds",name:"i18n:GuildsTitle",note:"",value:[]},{type:"monitoringList",itemType:"user",id:"users",name:"i18n:UsersTitle",note:"",value:[]}]},{type:"category",id:"log",name:"i18n:LogTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"logAllUsers",name:"i18n:LogAllUsers",note:"",value:false},{type:"switch",id:"logInvisible",name:"i18n:LogInvisible",note:"",value:false},{type:"switch",id:"persistLog",name:"i18n:PersistLog",note:"",value:false},{type:"textbox",id:"maxLogEntries",name:"i18n:MaxLogEntries",note:"",value:"250"}]},{type:"category",id:"options",name:"i18n:OptionsTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"allGuilds",name:"i18n:AllGuilds",note:"",value:false},{type:"switch",id:"notifyInvisible",name:"i18n:NotifyInvisible",note:"",value:false},{type:"switch",id:"notifyLeave",name:"i18n:NotifyLeave",note:"",value:false},{type:"switch",id:"silentNotification",name:"i18n:SilentNotification",note:"",value:false},{type:"switch",id:"suppressInDnd",name:"i18n:SuppressInDnd",note:"",value:true},{type:"switch",id:"logHotkey",name:"i18n:LogHotkey",note:"",value:true}]},{type:"category",id:"remoteNotify",name:"i18n:remoteNotifyTitle",collapsible:false,shown:true,settings:[{type:"switch",id:"enable",name:"i18n:remoteNotifyEnable",note:"",value:false},{type:"textbox",id:"uri",name:"i18n:remoteNotifyUri",note:"",value:"https://webhook.example/webhook"},{type:"textbox",id:"contentType",name:"i18n:remoteNotifyContentType",note:"",value:"application/json"},{type:"textbox",id:"body",name:"i18n:remoteNotifyBody",note:"",value:""}]}]};
-
-    return !global.ZeresPluginLibrary ? class {
-        constructor() {this._config = config;}
-        getName() {return config.info.name;}
-        getAuthor() {return config.info.authors.map(a => a.name).join(", ");}
-        getDescription() {return config.info.description;}
-        getVersion() {return config.info.version;}
-        load() {
-            BdApi.showConfirmationModal("Library Missing", `The library plugin needed for ${config.info.name} is missing. Please click Download Now to install it.`, {
-                confirmText: "Download Now",
-                cancelText: "Cancel",
-                onConfirm: () => {
-                    require("request").get("https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js", async (error, response, body) => {
-                        if (error) return require("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/rauenzi/BDPluginLibrary/master/release/0PluginLibrary.plugin.js");
-                        await new Promise(r => require("fs").writeFile(require("path").join(BdApi.Plugins.folder, "0PluginLibrary.plugin.js"), body, r));
+const config = {
+    info: {
+        name: "VoiceChannelUserJoinNotification",
+        authors: [
+            {
+                name: "DannyAAM",
+                discord_id: "275978619354873856",
+                github_username: "danny8376",
+                twitter_username: "DannyAAMtw"
+            }
+        ],
+        version: "0.1.12",
+        description: "A simple BetterDiscord plugin for you to monitor specific users joining voice channels in spcific guilds. (Originaly modified from VoiceChatNotifications by Metalloriff)",
+        github: "https://github.com/danny8376/DannyAAMBetterDiscordAddons/tree/master/Plugins/VoiceChannelUserJoinNotification",
+        github_raw: "https://raw.githubusercontent.com/danny8376/DannyAAMBetterDiscordAddons/master/Plugins/VoiceChannelUserJoinNotification/VoiceChannelUserJoinNotification.plugin.js"
+    },
+    changelog: [
+        {
+            title: "Fix wrong getVoiceState function",
+            type: "fixed",
+            items: [
+                "Fix wrong getVoiceState function"
+            ]
+        },
+        {
+            title: "(Previous) Fix permission checking",
+            type: "fixed",
+            items: [
+                "Fix permission checking"
+            ]
+        },
+        {
+            title: "(Previously previous) Try to fix lots of stuff for updated discord",
+            type: "fixed",
+            items: [
+                "Try to fix lots of stuff for updated discord"
+            ]
+        },
+        {
+            title: "Thanks",
+            type: "progress",
+            items: [
+                "This plugins is originaly modified from VoiceChatNotifications by Metalloriff (https://github.com/Metalloriff/BetterDiscordPlugins/blob/a056291d1498deb721908cce45cff5625c7a7f1e/VoiceChatNotifications.plugin.js). Learned from his plugins how to implement this plugin. Thanks for him."
+            ]
+        }
+    ],
+    main: "index.js",
+    defaultConfig: [
+        {
+            type: "category",
+            id: "monitoring",
+            name: "i18n:MonitoringTitle",
+            collapsible: false,
+            shown: true,
+            settings: [
+                {
+                    type: "monitoringList",
+                    itemType: "guild",
+                    id: "guilds",
+                    name: "i18n:GuildsTitle",
+                    note: "",
+                    value: []
+                },
+                {
+                    type: "monitoringList",
+                    itemType: "user",
+                    id: "users",
+                    name: "i18n:UsersTitle",
+                    note: "",
+                    value: []
+                }
+            ]
+        },
+        {
+            type: "category",
+            id: "log",
+            name: "i18n:LogTitle",
+            collapsible: false,
+            shown: true,
+            settings: [
+                {
+                    type: "switch",
+                    id: "logAllUsers",
+                    name: "i18n:LogAllUsers",
+                    note: "",
+                    value: false
+                },
+                {
+                    type: "switch",
+                    id: "logInvisible",
+                    name: "i18n:LogInvisible",
+                    note: "",
+                    value: false
+                },
+                {
+                    type: "switch",
+                    id: "persistLog",
+                    name: "i18n:PersistLog",
+                    note: "",
+                    value: false
+                },
+                {
+                    type: "textbox",
+                    id: "maxLogEntries",
+                    name: "i18n:MaxLogEntries",
+                    note: "",
+                    value: "250"
+                }
+            ]
+        },
+        {
+            type: "category",
+            id: "options",
+            name: "i18n:OptionsTitle",
+            collapsible: false,
+            shown: true,
+            settings: [
+                {
+                    type: "switch",
+                    id: "allGuilds",
+                    name: "i18n:AllGuilds",
+                    note: "",
+                    value: false
+                },
+                {
+                    type: "switch",
+                    id: "notifyInvisible",
+                    name: "i18n:NotifyInvisible",
+                    note: "",
+                    value: false
+                },
+                {
+                    type: "switch",
+                    id: "notifyLeave",
+                    name: "i18n:NotifyLeave",
+                    note: "",
+                    value: false
+                },
+                {
+                    type: "switch",
+                    id: "silentNotification",
+                    name: "i18n:SilentNotification",
+                    note: "",
+                    value: false
+                },
+                {
+                    type: "switch",
+                    id: "suppressInDnd",
+                    name: "i18n:SuppressInDnd",
+                    note: "",
+                    value: true
+                },
+                {
+                    type: "switch",
+                    id: "logHotkey",
+                    name: "i18n:LogHotkey",
+                    note: "",
+                    value: true
+                }
+            ]
+        },
+        {
+            type: "category",
+            id: "remoteNotify",
+            name: "i18n:remoteNotifyTitle",
+            collapsible: false,
+            shown: true,
+            settings: [
+                {
+                    type: "switch",
+                    id: "enable",
+                    name: "i18n:remoteNotifyEnable",
+                    note: "",
+                    value: false
+                },
+                {
+                    type: "textbox",
+                    id: "uri",
+                    name: "i18n:remoteNotifyUri",
+                    note: "",
+                    value: "https://webhook.example/webhook"
+                },
+                {
+                    type: "textbox",
+                    id: "contentType",
+                    name: "i18n:remoteNotifyContentType",
+                    note: "",
+                    value: "application/json"
+                },
+                {
+                    type: "textbox",
+                    id: "body",
+                    name: "i18n:remoteNotifyBody",
+                    note: "",
+                    value: ""
+                }
+            ]
+        }
+    ]
+};
+class Dummy {
+    constructor() {this._config = config;}
+    start() {}
+    stop() {}
+}
+ 
+if (!global.ZeresPluginLibrary) {
+    BdApi.showConfirmationModal("Library Missing", `The library plugin needed for ${config.name ?? config.info.name} is missing. Please click Download Now to install it.`, {
+        confirmText: "Download Now",
+        cancelText: "Cancel",
+        onConfirm: () => {
+            require("request").get("https://betterdiscord.app/gh-redirect?id=9", async (err, resp, body) => {
+                if (err) return require("electron").shell.openExternal("https://betterdiscord.app/Download?id=9");
+                if (resp.statusCode === 302) {
+                    require("request").get(resp.headers.location, async (error, response, content) => {
+                        if (error) return require("electron").shell.openExternal("https://betterdiscord.app/Download?id=9");
+                        await new Promise(r => require("fs").writeFile(require("path").join(BdApi.Plugins.folder, "0PluginLibrary.plugin.js"), content, r));
                     });
+                }
+                else {
+                    await new Promise(r => require("fs").writeFile(require("path").join(BdApi.Plugins.folder, "0PluginLibrary.plugin.js"), body, r));
                 }
             });
         }
-        start() {}
-        stop() {}
-    } : (([Plugin, Api]) => {
-        const plugin = (Plugin, Api) => {
+    });
+}
+ 
+module.exports = !global.ZeresPluginLibrary ? Dummy : (([Plugin, Api]) => {
+     const plugin = (Plugin, Api) => {
     const {Patcher, DiscordContextMenu, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
     const {React, DiscordConstants} = DiscordModules;
     const {Permissions} = DiscordConstants;
@@ -953,8 +1159,6 @@ module.exports = (() => {
 
     };
 };
-        return plugin(Plugin, Api);
-    })(global.ZeresPluginLibrary.buildPlugin(config));
-})();
-
+     return plugin(Plugin, Api);
+})(global.ZeresPluginLibrary.buildPlugin(config));
 /*@end@*/
