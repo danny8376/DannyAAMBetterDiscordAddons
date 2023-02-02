@@ -733,7 +733,7 @@ module.exports = !global.ZeresPluginLibrary ? Dummy : (([Plugin, Api]) => {
 
             document.addEventListener("keydown", this.onKeyDown);
             
-            DOM.addStyle("VCUJN", this.css);
+            DOM.addStyle(this.name, this.css);
         }
 
         onStop() {
@@ -746,7 +746,7 @@ module.exports = !global.ZeresPluginLibrary ? Dummy : (([Plugin, Api]) => {
                 this.savePersistLog();
             }
             this.saveSettings();
-            DOM.removeStyle("VCUJN");
+            DOM.removeStyle(this.name);
         }
 
         migrateOldMonitoringList() {

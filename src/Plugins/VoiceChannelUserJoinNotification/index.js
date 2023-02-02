@@ -352,7 +352,7 @@ module.exports = (Plugin, Api) => {
 
             document.addEventListener("keydown", this.onKeyDown);
             
-            DOM.addStyle("VCUJN", this.css);
+            DOM.addStyle(this.name, this.css);
         }
 
         onStop() {
@@ -365,7 +365,7 @@ module.exports = (Plugin, Api) => {
                 this.savePersistLog();
             }
             this.saveSettings();
-            DOM.removeStyle("VCUJN");
+            DOM.removeStyle(this.name);
         }
 
         migrateOldMonitoringList() {
