@@ -265,7 +265,7 @@ module.exports = !global.ZeresPluginLibrary ? Dummy : (([Plugin, Api]) => {
      const plugin = (Plugin, Api) => {
     const {Patcher, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
     const {React, DiscordPermissions} = DiscordModules;
-    const {ContextMenu} = BdApi;
+    const {ContextMenu, DOM} = BdApi;
 
     const DC = {
         cache: {
@@ -497,22 +497,83 @@ module.exports = !global.ZeresPluginLibrary ? Dummy : (([Plugin, Api]) => {
             this.logItemHTML = `<div class="flex-1xMQg5 flex-1O1GKY da-flex da-flex vertical-V37hAW flex-1O1GKY directionColumn-35P_nr justifyStart-2NDFzi alignStretch-DpGPf3 noWrap-3jynv6 auditLog-3jNbM6 da-auditLog marginBottom8-AtZOdT da-marginBottom8" style="flex: 1 1 auto;">
   <div class="header-GwIGlr da-header" aria-expanded="false" role="button" tabindex="0">
     <div class="avatar-_VZUJy da-avatar wrapper-3t9DeA da-wrapper" role="img" aria-hidden="true" style="width: 40px; height: 40px;">
-      <svg width="49" height="40" viewBox="0 0 49 40" class="mask-1l8v16 da-mask svg-2V3M55 da-svg" aria-hidden="true">
-        <foreignObject x="0" y="0" width="40" height="40" mask="url(#svg-mask-avatar-default)">
-          <img src="{{avatar_url}}" alt=" " class="avatar-VxgULZ da-avatar" aria-hidden="true">
-        </foreignObject>
-      </svg>
+      <img src="{{avatar_url}}" alt=" " class="avatar-VxgULZ da-avatar" aria-hidden="true">
     </div>
     <div class="flex-1xMQg5 flex-1O1GKY da-flex da-flex vertical-V37hAW flex-1O1GKY directionColumn-35P_nr justifyStart-2NDFzi alignStretch-DpGPf3 noWrap-3jynv6 timeWrap-2DasL6 da-timeWrap" style="flex: 1 1 auto;">
       <div class="overflowEllipsis-1PBFxQ da-overflowEllipsis flexChild-faoVW3 da-flexChild" style="flex: 1 1 auto; word-wrap: break-word; white-space: normal;">
-        <span class="userHook-3AdCBF da-userHook"><span>{{user_name}}</span><span class="discrim-3rYTMj da-discrim">#{{user_discrim}}</span></span> {{action}} <span class="targetChannel-TrRFlx da-targetChannel"><strong>#{{channel_name}}</strong></span> @ <img class="icon-27yU2q da-icon" src="{{guild_icon}}" alt="" style="display: inline; border-radius: 50%; width: 2em; height: 2em;" aria-hidden="true"><span class="targetChannel-TrRFlx da-targetChannel"><strong>{{guild_name}}</strong></span>
+        <span>
+          <span class="userHook-3AdCBF da-userHook">
+            <span>{{user_name}}</span>
+            <span class="discrim-3rYTMj da-discrim">#{{user_discrim}}</span>
+          </span>
+          <div class="timestamp-1mruiI da-timestamp">{{timestamp}}</div>
+        </span>
+        <span>
+          <span class="action">{{action}}</span>
+          <span class="targetChannel-TrRFlx da-targetChannel">
+            <strong>#{{channel_name}}</strong>
+          </span>
+        </span>
+        <span>
+          <span class="at">at</span>
+          <img class="icon-27yU2q da-icon" src="{{guild_icon}}" alt="" style="display: inline; border-radius: 50%; width: 2em; height: 2em;" aria-hidden="true">
+          <span class="targetChannel-TrRFlx da-targetChannel">
+            <strong>{{guild_name}}</strong>
+          </span>
+        </span>
       </div>
-      <div class="timestamp-1mruiI da-timestamp">{{timestamp}}</div>
     </div>
   </div>
 </div>
 
 `.trim();
+            this.css = `.header-GwIGlr {
+    display:flex;
+}
+.da-flexChild {
+    display: flex;
+    flex-direction: column;
+    color: var(--text-normal);
+}
+.userHook-3AdCBF {
+    color: var(--header-primary);
+}
+.da-targetChannel {
+    margin-left: 6px;
+}
+.da-avatar {
+    width:40px;
+    border-radius: 50%;
+}
+.da-flexChild>span {
+    display: flex;
+    align-items: center;
+    width:100%;
+    margin-left:10px;
+}
+.da-icon {
+    width:24px !important;
+    height:24px !important;
+    margin-left: 6px;
+}
+.da-timestamp {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    margin-left:6px;
+}
+.da-flexChild>span:nth-child(2) {
+    margin-top:8px;
+}
+.content-2hZxGK>div {
+    margin-bottom: 16px;
+    padding:4px 16px 4px 16px;
+}
+.content-26qlhD>div:hover {
+    background: #0002;
+}
+.content-2hZxGK {
+    padding:0 !important;
+}`;
         }
 
         checkPatchI18n() {
@@ -671,6 +732,8 @@ module.exports = !global.ZeresPluginLibrary ? Dummy : (([Plugin, Api]) => {
             };
 
             document.addEventListener("keydown", this.onKeyDown);
+            
+            DOM.addStyle("VCUJN", this.css);
         }
 
         onStop() {
@@ -683,6 +746,7 @@ module.exports = !global.ZeresPluginLibrary ? Dummy : (([Plugin, Api]) => {
                 this.savePersistLog();
             }
             this.saveSettings();
+            DOM.removeStyle("VCUJN");
         }
 
         migrateOldMonitoringList() {

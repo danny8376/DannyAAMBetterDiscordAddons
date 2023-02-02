@@ -2,7 +2,7 @@
 module.exports = (Plugin, Api) => {
     const {Patcher, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
     const {React, DiscordPermissions} = DiscordModules;
-    const {ContextMenu} = BdApi;
+    const {ContextMenu, DOM} = BdApi;
 
     const DC = {
         cache: {
@@ -192,6 +192,7 @@ module.exports = (Plugin, Api) => {
             this.currentLocale = "";
 
             this.logItemHTML = require("log_item.html").trim();
+            this.css = require("styles.css");
         }
 
         checkPatchI18n() {
@@ -350,6 +351,8 @@ module.exports = (Plugin, Api) => {
             };
 
             document.addEventListener("keydown", this.onKeyDown);
+            
+            DOM.addStyle("VCUJN", this.css);
         }
 
         onStop() {
@@ -362,6 +365,7 @@ module.exports = (Plugin, Api) => {
                 this.savePersistLog();
             }
             this.saveSettings();
+            DOM.removeStyle("VCUJN");
         }
 
         migrateOldMonitoringList() {
