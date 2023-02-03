@@ -140,7 +140,7 @@ const config = {
                     id: "maxLogEntries",
                     name: "i18n:MaxLogEntries",
                     note: "",
-                    value: "250"
+                    value: "2500"
                 }
             ]
         },
