@@ -555,7 +555,7 @@ module.exports = (Plugin, Api) => {
                 const channel = DC.getCachedChannel(entry.channelId);
                 const guild = DC.getCachedGuild(entry.guildId);
                 if (user === undefined || channel === undefined || guild === undefined) return null;
-                return ce("div", { dangerouslySetInnerHTML:{ __html: Utilities.formatString(this.logItemHTML, {
+                return Utilities.formatString(this.logItemHTML, {
                     user_name: DOMTools.escapeHTML(user.username),
                     user_discrim: user.discriminator,
                     avatar_url: user.getAvatarURL(),
@@ -564,9 +564,24 @@ module.exports = (Plugin, Api) => {
                     guild_icon: guild.getIconURL(),
                     guild_name: DOMTools.escapeHTML(guild.name),
                     timestamp: DOMTools.escapeHTML(new Date(entry.timestamp).toLocaleString())
-                }) } });
+                });
             });
-            Modals.showModal(this.getLocaleText("modalLogTitle"), children, {cancelText: null});
+
+            Modals.showModal(this.getLocaleText("modalLogTitle"), ce("div",{style:{overflow:"hidden scroll",height:440},className:"thin-31rlnD scrollerBase-_bVAAt",onScroll: (event)=>{
+                const target = event.target;
+                if (target.scrollTop > target.scrollHeight - target.clientHeight - 20) {
+                    const logLength = target.children.length;
+                    if (children.length > logLength) {
+                        for (let i=logLength-1;i<logLength+50;i++) {
+                            if (children[i]) {
+                                const element = document.createElement("div");
+                                element.innerHTML = children[i];
+                                target.appendChild(element);
+                            }
+                        }
+                    }
+                }
+            }},children.slice(0,49).map((item=>ce("div", { dangerouslySetInnerHTML:{ __html: item} })))), {cancelText: null});
         }
 
         checkChannelVisibility(channel) {
