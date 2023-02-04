@@ -527,7 +527,7 @@ module.exports = !global.ZeresPluginLibrary ? Dummy : (([Plugin, Api]) => {
 </div>
 
 `.trim();
-            this.css = `.header-GwIGlr {
+            this.css = `.da-header {
     display:flex;
 }
 .da-flexChild {
@@ -535,7 +535,7 @@ module.exports = !global.ZeresPluginLibrary ? Dummy : (([Plugin, Api]) => {
     flex-direction: column;
     color: var(--text-normal);
 }
-.userHook-3AdCBF {
+.da-userHook {
     color: var(--header-primary);
 }
 .da-targetChannel {
@@ -564,15 +564,17 @@ module.exports = !global.ZeresPluginLibrary ? Dummy : (([Plugin, Api]) => {
 .da-flexChild>span:nth-child(2) {
     margin-top:8px;
 }
-.content-2hZxGK>div {
+.da-log-list {
+    overflow: hidden scroll;
+    height: calc(100% + 20px);
+    margin: 0px -8px -20px -16px;
+}
+.da-log-list>div {
     margin-bottom: 16px;
     padding:4px 16px 4px 16px;
 }
-.content-26qlhD>div:hover {
-    background: #0002;
-}
-.content-2hZxGK {
-    padding:0 !important;
+.da-log-list>div:hover {
+    background: #0001;
 }`;
         }
 
@@ -951,7 +953,7 @@ module.exports = !global.ZeresPluginLibrary ? Dummy : (([Plugin, Api]) => {
                     timestamp: DOMTools.escapeHTML(new Date(entry.timestamp).toLocaleString())
                 }) } });
             });
-            Modals.showModal(this.getLocaleText("modalLogTitle"), children, {cancelText: null});
+            Modals.showModal(this.getLocaleText("modalLogTitle"), ce("div",{className:"thin-31rlnD scrollerBase-_bVAAt da-log-list"},children), {cancelText: null});
         }
 
         checkChannelVisibility(channel) {

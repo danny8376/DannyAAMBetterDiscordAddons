@@ -570,7 +570,7 @@ module.exports = (Plugin, Api) => {
                     timestamp: DOMTools.escapeHTML(new Date(entry.timestamp).toLocaleString())
                 }) } });
             });
-            Modals.showModal(this.getLocaleText("modalLogTitle"), children, {cancelText: null});
+            Modals.showModal(this.getLocaleText("modalLogTitle"), ce("div",{className:"thin-31rlnD scrollerBase-_bVAAt da-log-list"},children), {cancelText: null});
         }
 
         checkChannelVisibility(channel) {
