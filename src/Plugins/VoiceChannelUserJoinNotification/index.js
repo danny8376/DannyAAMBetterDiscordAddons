@@ -2,7 +2,7 @@
 module.exports = (Plugin, Api) => {
     const {Patcher, DiscordModules, DOMTools, Modals, PluginUtilities, Utilities, DiscordClasses, WebpackModules} = Api;
     const {React, DiscordPermissions} = DiscordModules;
-    const {ContextMenu} = BdApi;
+    const {ContextMenu, DOM} = BdApi;
 
     const DC = {
         cache: {
@@ -192,6 +192,7 @@ module.exports = (Plugin, Api) => {
             this.currentLocale = "";
 
             this.logItemHTML = require("log_item.html").trim();
+            this.css = require("styles.css");
         }
 
         checkPatchI18n() {
@@ -350,6 +351,8 @@ module.exports = (Plugin, Api) => {
             };
 
             document.addEventListener("keydown", this.onKeyDown);
+            
+            DOM.addStyle(this.name, this.css);
         }
 
         onStop() {
@@ -362,6 +365,7 @@ module.exports = (Plugin, Api) => {
                 this.savePersistLog();
             }
             this.saveSettings();
+            DOM.removeStyle(this.name);
         }
 
         migrateOldMonitoringList() {
@@ -566,7 +570,7 @@ module.exports = (Plugin, Api) => {
                     timestamp: DOMTools.escapeHTML(new Date(entry.timestamp).toLocaleString())
                 }) } });
             });
-            Modals.showModal(this.getLocaleText("modalLogTitle"), children, {cancelText: null});
+            Modals.showModal(this.getLocaleText("modalLogTitle"), ce("div",{className:"thin-31rlnD scrollerBase-_bVAAt da-log-list"},children), {cancelText: null});
         }
 
         checkChannelVisibility(channel) {

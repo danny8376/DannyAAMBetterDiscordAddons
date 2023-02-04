@@ -1,0 +1,49 @@
+.da-header {
+    display:flex;
+}
+.da-flexChild {
+    display: flex;
+    flex-direction: column;
+    color: var(--text-normal);
+}
+.da-userHook {
+    color: var(--header-primary);
+}
+.da-targetChannel {
+    margin-left: 6px;
+}
+.da-avatar {
+    width:40px;
+    border-radius: 50%;
+}
+.da-flexChild>span {
+    display: flex;
+    align-items: center;
+    width:100%;
+    margin-left:10px;
+}
+.da-icon {
+    width:24px !important;
+    height:24px !important;
+    margin-left: 6px;
+}
+.da-timestamp {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    margin-left:6px;
+}
+.da-flexChild>span:nth-child(2) {
+    margin-top:8px;
+}
+.da-log-list {
+    overflow: hidden scroll;
+    height: calc(100% + 20px);
+    margin: 0px -8px -20px -16px;
+}
+.da-log-list>div {
+    margin-bottom: 16px;
+    padding:4px 16px 4px 16px;
+}
+.da-log-list>div:hover {
+    background: #0001;
+}
