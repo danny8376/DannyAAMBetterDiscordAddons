@@ -871,12 +871,12 @@ module.exports = !global.ZeresPluginLibrary ? Dummy : (([Plugin, Api]) => {
             if (userId !== undefined) log = log.filter(entry => entry.userId === userId);
             const ce = React.createElement;
             const AuditLog = DiscordClasses.AuditLog;
-            const children = log.map(entry => {
+            const formatChild = (entry, html) => {
                 const user = DC.getCachedUser(entry.userId);
                 const channel = DC.getCachedChannel(entry.channelId);
                 const guild = DC.getCachedGuild(entry.guildId);
                 if (user === undefined || channel === undefined || guild === undefined) return null;
-                return Utilities.formatString(this.logItemHTML, {
+                const __html = Utilities.formatString(this.logItemHTML, {
                     user_name: DOMTools.escapeHTML(user.username),
                     user_discrim: user.discriminator,
                     avatar_url: user.getAvatarURL(),
@@ -886,23 +886,27 @@ module.exports = !global.ZeresPluginLibrary ? Dummy : (([Plugin, Api]) => {
                     guild_name: DOMTools.escapeHTML(guild.name),
                     timestamp: DOMTools.escapeHTML(new Date(entry.timestamp).toLocaleString())
                 });
-            });
+                return html ? __html : ce("div", { dangerouslySetInnerHTML: { __html } });
+            };
 
-            Modals.showModal(this.getLocaleText("modalLogTitle"), ce("div",{style:{overflow:"hidden scroll",height:440},className:"thin-31rlnD scrollerBase-_bVAAt",onScroll: (event)=>{
-                const target = event.target;
-                if (target.scrollTop > target.scrollHeight - target.clientHeight - 20) {
-                    const logLength = target.children.length;
-                    if (children.length > logLength) {
-                        for (let i=logLength-1;i<logLength+50;i++) {
-                            if (children[i]) {
-                                const element = document.createElement("div");
-                                element.innerHTML = children[i];
-                                target.appendChild(element);
-                            }
-                        }
+            Modals.showModal(this.getLocaleText("modalLogTitle"), ce("div", {
+                style: {
+                    overflow: "hidden scroll",
+                    height: 440
+                },
+                className: "thin-31rlnD scrollerBase-_bVAAt",
+                onScroll: (event) => {
+                    const target = event.target;
+                    if (target.scrollTop > target.scrollHeight - target.clientHeight - 20) {
+                        log.splice(0, 50).forEach((entry) => {
+                            // TODO: make this more "react way"
+                            const ele = document.createElement("div");
+                            ele.innerHTML = formatChild(entry, true);
+                            target.appendChild(ele);
+                        });
                     }
                 }
-            }},children.slice(0,49).map((item=>ce("div", { dangerouslySetInnerHTML:{ __html: item} })))), {cancelText: null});
+            }, log.splice(0, 50).map(entry => formatChild(entry))), {cancelText: null});
         }
 
         checkChannelVisibility(channel) {
