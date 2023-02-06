@@ -43,7 +43,7 @@
                 {"type": "switch", "id": "logAllUsers", "name": "i18n:LogAllUsers", "note": "", "value": false},
                 {"type": "switch", "id": "logInvisible", "name": "i18n:LogInvisible", "note": "", "value": false},
                 {"type": "switch", "id": "persistLog", "name": "i18n:PersistLog", "note": "", "value": false},
-                {"type": "textbox", "id": "maxLogEntries", "name": "i18n:MaxLogEntries", "note": "", "value": "250"}
+                {"type": "textbox", "id": "maxLogEntries", "name": "i18n:MaxLogEntries", "note": "", "value": "2500"}
             ]
         },
         {
