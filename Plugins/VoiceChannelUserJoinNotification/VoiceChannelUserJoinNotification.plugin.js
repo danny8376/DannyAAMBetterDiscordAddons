@@ -870,7 +870,6 @@ module.exports = !global.ZeresPluginLibrary ? Dummy : (([Plugin, Api]) => {
             if (channelId !== undefined) log = log.filter(entry => entry.channelId === channelId || entry.lastChannelId === channelId);
             if (userId !== undefined) log = log.filter(entry => entry.userId === userId);
             const ce = React.createElement;
-            const AuditLog = DiscordClasses.AuditLog;
             const formatChild = (entry, html) => {
                 const user = DC.getCachedUser(entry.userId);
                 const channel = DC.getCachedChannel(entry.channelId);
